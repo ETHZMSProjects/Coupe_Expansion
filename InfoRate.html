@@ -285,7 +285,7 @@ div.tocify {
 <h1 class="title toc-ignore">Human languages share an optimal information transmission rate</h1>
 <h3 class="subtitle"><em>Full statistical analysis and plots</em></h3>
 <h4 class="author"><em>Christophe Coupé, Dan Dediu and François Pellegrino</em></h4>
-<h4 class="date"><em>2019-03-18 16:57:12</em></h4>
+<h4 class="date"><em>2019-03-18 18:43:54</em></h4>
 
 </div>
 
@@ -2095,6 +2095,55 @@ Sex1 -0.001  0.003</code></pre>
 <p>but, alas, the inclusion of <em>Age</em> is not warranted in the <em>GAMLSS model</em>, nor (really) in the simpler <em>LMER model</em>.</p>
 <p>Thus, while <em>Age</em> seems to <strong>negatively influence</strong> (in a <strong>sex-dependent manner</strong>) both <em>SR</em> and <em>IR</em>, as well as <strong>strengthen</strong> the <em>negative relationship</em> between them, its effects are <strong>far from clear</strong> in the current dataset.</p>
 </div>
+</div>
+<div id="is-there-any-relationship-between-id-age-and-sex" class="section level2">
+<h2>Is there any relationship between <em>ID</em>, <em>Age</em> and <em>Sex</em>?</h2>
+<p>Here we test the hypothesis that <em>ID</em> is confounded by <em>Age</em> and <em>Sex</em> structure between languages:</p>
+<pre><code>Data: info.rate.data.for.age
+Models:
+model.ID.age: ID ~ Age + (1 | Family)
+model.ID.age.sex: ID ~ 1 + Sex * Age + (1 | Family)
+                 Df    AIC    BIC  logLik deviance  Chisq Chi Df Pr(&gt;Chisq)
+model.ID.age      4 1089.1 1111.5 -540.57   1081.1                         
+model.ID.age.sex  6 1091.9 1125.5 -539.96   1079.9 1.2113      2     0.5457</code></pre>
+<pre><code>Data: info.rate.data.for.age
+Models:
+model.ID: ID ~ (1 | Family)
+model.ID.age.sex: ID ~ 1 + Sex * Age + (1 | Family)
+                 Df    AIC    BIC  logLik deviance  Chisq Chi Df Pr(&gt;Chisq)
+model.ID          3 1088.2 1105.0 -541.09   1082.2                         
+model.ID.age.sex  6 1091.9 1125.5 -539.96   1079.9 2.2555      3     0.5211</code></pre>
+<pre><code>Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+Formula: ID ~ 1 + Sex * Age + (1 | Family)
+   Data: info.rate.data.for.age
+
+REML criterion at convergence: 1113.3
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-1.17017 -0.67570 -0.01297  0.05397  2.96861 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ Family   (Intercept) 1.14186  1.0686  
+ Residual             0.09778  0.3127  
+Number of obs: 1979, groups:  Family, 9
+
+Fixed effects:
+              Estimate Std. Error         df t value Pr(&gt;|t|)    
+(Intercept)  5.992e+00  3.571e-01  8.071e+00  16.778 1.46e-07 ***
+Sex1        -2.587e-02  2.361e-02  1.967e+03  -1.096    0.273    
+Age          9.073e-04  8.119e-04  1.967e+03   1.118    0.264    
+Sex1:Age     7.923e-04  7.370e-04  1.967e+03   1.075    0.282    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation of Fixed Effects:
+         (Intr) Sex1   Age   
+Sex1      0.005              
+Age      -0.068 -0.087       
+Sex1:Age -0.005 -0.955  0.095</code></pre>
+<p>Thus, there does not seem to be aby relationship between <em>ID</em>, <em>Age</em> and <em>Sex</em>.</p>
 </div>
 <div id="mixture-of-gaussians" class="section level2">
 <h2>Mixture of Gaussians</h2>
