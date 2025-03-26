@@ -30,6 +30,8 @@ library(sjPlot);
 library(moments);
 library(parallel);
 library(pander);
+library(dplyr);
+library(magrittr);
 
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, # default code chunk options
                       fig.width=9, fig.height=6, fig.align = "center", comment=NA, # default figure dimensions
@@ -686,25 +688,49 @@ cor.test(info.rate.data$SR, info.rate.data$ID, method="spearman");
 
 ### Linear ICCs
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-tmp1 <- icc(lmer(NS ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
-knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
-             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `NS ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
+# ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# tmp1 <- icc(lmer(NS ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
+# knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
+#             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `NS ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
 
-tmp1 <- icc(lmer(SR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
-knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
-             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `SR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
+# tmp1 <- icc(lmer(SR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
+# knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
+#             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `SR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
 
-tmp1 <- icc(lmer(ShIR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
-knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
-             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `ShIR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
+# tmp1 <- icc(lmer(ShIR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
+# knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
+#              digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `ShIR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
 
-tmp1 <- icc(lmer(IR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
-knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
-             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `IR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
-```
+# tmp1 <- icc(lmer(IR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data=info.rate.data))
+# knitr::kable(data.frame("f"=c("Text", "Family", "Language", "Speaker"), "ICC"=c(tmp1["Text"], tmp1["Family"], tmp1["Language:Family"], tmp1["Speaker"])), 
+#             digits=2, row.names=FALSE, col.names=c("Level-1 factor (f)", "ICC"), caption="ICC for model `IR ~ 1 + (1 | Text) + (1 | Family/Language)+ (1 | Speaker)`.");
+# ```
 
+compute_icc_table <- function(model, caption) {
+  tmp1 <- performance::icc(model)
+  icc_values <- tmp1$ICC  # Extract ICC values
+  
+  knitr::kable(data.frame(
+    "f" = c("Text", "Family", "Language", "Speaker"),
+    "ICC" = c(icc_values[1], icc_values[2], icc_values[3], icc_values[4])
+  ), 
+  digits = 2, row.names = FALSE, col.names = c("Level-1 factor (f)", "ICC"),
+  caption = caption)
+}
 
+# Compute and display ICCs for each model
+compute_icc_table(lmer(NS ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data = info.rate.data),
+                  "ICC for model `NS ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker)`.")
+
+compute_icc_table(lmer(SR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data = info.rate.data),
+                  "ICC for model `SR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker)`.")
+
+compute_icc_table(lmer(ShIR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data = info.rate.data),
+                  "ICC for model `ShIR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker)`.")
+
+compute_icc_table(lmer(IR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker), data = info.rate.data),
+                  "ICC for model `IR ~ 1 + (1 | Text) + (1 | Family/Language) + (1 | Speaker)`.") 
+                  
 ### SR
 
 #### Comparing models
@@ -1399,8 +1425,10 @@ The multi-level regression of *SDIR* on *ID* (with *Text* as random effect) and 
 ```{r message = FALSE, echo=FALSE}
 m0 <- lmer(NSVR ~ ID + (1 | Text), data=d);
 summary(m0);
-icc(m0);
+performance::icc(m0);
+# original: icc(m0);
 ```
+
 
 ### Average *SDIR* across *Text*s for each *Language*
 
@@ -1481,6 +1509,8 @@ AIC(mix.SR.NO.1, mix.SR.NO.2, mix.SR.NO.3, mix.SR.NO.4, mix.SR.NO.5)
 ***Showing the distributions***
 
 ```{r SR_mixture_display, fig.width=6, fig.height=5, fig.cap="Mixture of Gaussians for SR.", echo=FALSE}
+library(MASS)
+
 fn.SR.NO.1 <- getpdfMX(mix.SR.NO.1, observation=1)
 fn.SR.NO.2 <- getpdfMX(mix.SR.NO.2, observation=1)
 fn.SR.NO.3 <- getpdfMX(mix.SR.NO.3, observation=1)
@@ -2601,7 +2631,7 @@ ggplot(syll.data, aes(x=SR, y=SR.auto, color=Language)) +
 **Across languages:**
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 m0 <- lmer(SR.auto ~ SR + (1 | Family/Language) + (1 | Text) + (1 | Speaker), data=syll.data); m0s <- summary(m0); print(m0s);
-icc(m0);
+performance::icc(m0);
 r1 <- cor.test(syll.data$SR, syll.data$SR.auto, method="pearson"); #print(r1);
 r2 <- cor.test(syll.data$SR, syll.data$SR.auto, method="spearman"); #print(r2)
 t1 <- t.test(syll.data$SR, syll.data$SR.auto, paired=TRUE); #print(t1);
@@ -2623,7 +2653,8 @@ for( i in unique(syll.data$Language) )
   d <- syll.data[ syll.data$Language == i, ];
   m0 <- lmer(SR.auto ~ SR + (1 | Text) + (1 | Speaker), data=d);
   m0s <- summary(m0); print(m0s);
-  print(icc(m0));
+  print(performance::icc(m0))
+  # print(icc(m0));
   r1 <- cor.test(d$SR, d$SR.auto, method="pearson"); #print(r1);
   r2 <- cor.test(d$SR, d$SR.auto, method="spearman"); #print(r2);
   t1 <- t.test(d$SR, d$SR.auto, paired=TRUE); #print(t1);
