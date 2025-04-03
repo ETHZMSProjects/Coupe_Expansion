@@ -1,5 +1,7 @@
 import pandas as pd
 import spacy
+import os
+import re
 
 # Load the French language model from spaCy
 nlp = spacy.load("fr_core_news_sm")
@@ -36,19 +38,13 @@ def syllabify_sentences(tokenized_sentence, language="French", preview=True):
         list: A list of syllables for each word in the sentence.
     """
     if language == 'French':
-        # Path to the Lexique383 dataset for French words and their syllables
-        path = "french_lexique/Lexique383.tsv"
 
-        # Read the dataset into a DataFrame
-        feature_df = pd.read_csv(path, sep="\t", encoding="utf-8")
-        
+        # Use the mounted drive letter
+        path = "Z:/data/French/french_lexique/Lexique383.tsv"  
+        feature_df = pd.read_csv(path, sep="\t", encoding="utf-8") 
+
         # Drop rows with missing orthographic or syllable features
         feature_df = feature_df.dropna(subset=['ortho', 'syll'])
-
-        # Print some rows and columns for inspection (can be removed in production)
-        print(feature_df.head(20))  
-        print(feature_df.columns)  
-        print(feature_df[['ortho', 'syll']].head(40)) 
 
         # Build a lookup dictionary: {word: syllables}
         word_to_feature_dict = dict(zip(feature_df['ortho'].str.lower(), feature_df['syll']))
@@ -58,25 +54,20 @@ def syllabify_sentences(tokenized_sentence, language="French", preview=True):
 
     # Prepare the list to store the syllabified sentence
     transcribed_sentence = []
-    features_per_word = []
 
     # Iterate through each word in the tokenized sentence
     for word in tokenized_sentence:
         # Get syllables for the word, or return the word itself if not found in the dictionary
-        transcribed_word = word_to_feature_dict.get(word, word)  
-        
-        # If syllables are combined with a dot, split them
-        if '.' in transcribed_word:
-            splitted_word = transcribed_word.split('.')  
-            features_per_word.extend(splitted_word)
-        else:
-            features_per_word.append(transcribed_word)
+        transcribed_word = word_to_feature_dict.get(word.lower(), word)  
+        if transcribed_word:
+            word_parts = re.split(r"[.-]", transcribed_word) # Split into syllables
+        else: 
+            word_parts = [f"[UNKNOWN] {word}"]  # Mark for debugging
 
-    # Append the syllables for the entire sentence
-    transcribed_sentence.append(features_per_word)
+        # Append the syllables for the entire sentence
+        transcribed_sentence.extend(word_parts)
 
-    # If preview is True, print the transcribed sentence
-    if preview:
+    if preview: 
         print(transcribed_sentence)
 
     return transcribed_sentence
