@@ -29,6 +29,27 @@ def syllabify_sentences(tokenized_sentence, language="French", preview=True):
     Converts a list of tokenized words into a sequence of transcribed syllables.
     The syllables are retrieved from a lexicon specific to the language.
 
+    Example outputs: 
+
+    tokenized_sentences = [
+        ['bonjour', 'comment', 'allez', 'vous'],
+        ['je', 'vais', 'au', 'marché'],
+    ]
+
+    word_to_feature_dict: 
+    {
+        'je': 'ʒə',
+        'vais': 'vɛ',
+        'au': 'o',
+        'marché': 'maʁ.ʃe',
+    }
+
+    transcribed_sentences: 
+    [
+    ['bɔ̃', 'ʒuʁ', 'kɔ', 'mɑ̃', 'a', 'le', 'vu'],
+    ['ʒə', 'vɛ', 'o', 'maʁ', 'ʃe'],
+    ]
+
     Args:
         tokenized_sentence (list): A list of tokenized words from a sentence.
         language (str): The language of the sentence (default is "French").
@@ -60,15 +81,13 @@ def syllabify_sentences(tokenized_sentence, language="French", preview=True):
         # Get syllables for the word, or return the word itself if not found in the dictionary
         transcribed_word = word_to_feature_dict.get(word.lower(), word)  
         if transcribed_word:
+            print(transcribed_word)
             word_parts = re.split(r"[.-]", transcribed_word) # Split into syllables
         else: 
             word_parts = [f"[UNKNOWN] {word}"]  # Mark for debugging
 
         # Append the syllables for the entire sentence
         transcribed_sentence.extend(word_parts)
-
-    if preview: 
-        print(transcribed_sentence)
 
     return transcribed_sentence
 
