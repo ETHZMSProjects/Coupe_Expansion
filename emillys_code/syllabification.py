@@ -81,7 +81,6 @@ def syllabify_sentences(tokenized_sentence, language="French", preview=True):
         # Get syllables for the word, or return the word itself if not found in the dictionary
         transcribed_word = word_to_feature_dict.get(word.lower(), word)  
         if transcribed_word:
-            print(transcribed_word)
             word_parts = re.split(r"[.-]", transcribed_word) # Split into syllables
         else: 
             word_parts = [f"[UNKNOWN] {word}"]  # Mark for debugging
