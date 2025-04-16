@@ -1,5 +1,6 @@
 from math import log2
 import pandas as pd
+import warnings
 
 def compute_information_density(joint_probs, marginal_probs):
     """
@@ -16,12 +17,19 @@ def compute_information_density(joint_probs, marginal_probs):
     baseline = vietnamese_ID_for_normalization()
     ID = 0.0
     for prefix, suffix_probs in joint_probs.items():
-        for suffix, p_xy in suffix_probs.items():
-            p_x = marginal_probs[prefix]  # p(x)
-            ID += -p_xy * log2(p_xy / p_x)
+        p_x = marginal_probs[prefix]  # p(x)
+        if p_x == 0:
+            continue  # skip to avoid division by zero
 
-    normalized_ID = ID / baseline
-    return normalized_ID
+        for suffix, p_xy in suffix_probs.items():
+            if p_xy > 0:
+                ID -= p_xy * log2(p_xy / p_x)
+
+    if baseline:
+        return ID / baseline
+    else:
+        warnings.warn("Warning: Baseline for ID normalization is not provided. Returning ID = 0.0.")
+        return 0.0 
 
 
 def vietnamese_ID_for_normalization(): 
