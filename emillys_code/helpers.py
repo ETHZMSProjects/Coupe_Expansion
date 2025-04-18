@@ -4,6 +4,64 @@ import warnings
 import re
 from pathlib import Path
 
+def update_values_in_csv(language_to_update, value, n):
+    if n == 1:
+        model = "unigram"
+    elif n == 2:
+        model = "bigram"
+    elif n == 3:
+        model = "trigram"
+    elif n == 4:
+        model = "4gram"
+    else:
+        raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
+
+    column = f"ID_{model}_esidaine"
+
+    # Check if the column exists, if not, create it with NaN values
+    if column not in summary_df.columns:
+        summary_df[column] = pd.NA
+
+    #Read the summary CSV file
+    summary_df = pd.read_csv('syll_comparison_coupe_esidaine.csv')
+
+    # Update the respective column (value type) for that language
+    summary_df.loc[summary_df['Language'] == language_to_update, column] = value
+
+    # Step 5: Save the updated DataFrame to the CSV file
+    summary_df.to_csv('syll_comparison_coupe_esidaine.csv', index=False)
+
+    print(f"Updated {column} for language {language_to_update} with value {value}.")
+
+
+def get_info_rate(info_density):
+    """
+    Calculates the information rate based on the provided information density.
+    The function assumes:
+    - The CSV file is tab-separated (`\t`)
+    - There's a column named 'nsyll' representing the number of syllables
+    - There's a column named 'phonationtime' representing the phonation time
+    Args:
+        info_density (float): Information density value
+    Returns:
+        float: Information rate per second
+    """
+    file_path = r"C:\Users\emill\Documents\GitHub\Coupe_Expansion\InfoRateData.csv"
+    
+    # Read the CSV file
+    df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
+
+    # Extract the columns "nsyll" and "phonationtime"
+    nsyll = df['nsyll']
+    phonationtime = df['phonationtime']
+
+    speech_rate = nsyll / phonotationtime
+
+    # Calculate information rate per second
+    info_rate = info_density * speech_rate 
+    return info_rate
+
+
 def get_word_data(path):
     """
     Reads a CSV file containing word frequency data and returns a dictionary 

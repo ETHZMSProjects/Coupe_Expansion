@@ -95,7 +95,7 @@ class MarkovModel:
                 ngrams_per_word.extend(word_ngrams)
         return ngrams_per_word
 
-    def save(self, language, input_type):
+    def save_model(self, language, input_type):
         """
         Save this specific model
         """
@@ -105,6 +105,8 @@ class MarkovModel:
             pickle.dump(self, f)
 
         print(f"\n✅ Saved {self.n}-gram model to 'produced_data/{language}/'")
+
+
 
     @staticmethod
     def load(path):
