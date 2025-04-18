@@ -13,51 +13,72 @@ class MarkovModel:
         Initialize an n-gram Markov model.
         """
         self.n = n # n-gram size
-        self.joint_probs = defaultdict(dict)  # Stores p(x, y) — how often two items appear together
-        self.marginal_probs = defaultdict(float) # Stores p(x) — how often the first part shows up
+        self.ngram_counts = defaultdict(int)  # Bigram or n-gram counts
+        self.prefix_counts = defaultdict(int)  # Prefix counts for normalization
+        self.normalized_probs = defaultdict(float)
+        self.entropy_map = defaultdict(float) # entropy_map[prefix] holds H(Y|X=prefix)
+        self.total_ngrams = 0
 
     def build(self, input, input_type):
         """
         Build the n-gram model from syllable-level sentence data or within-word syllables.
         `input_type` must be either 'sentences' or 'words'.
         """
-        ngram_counts = defaultdict(lambda: defaultdict(int))
-        total_ngrams = 0
+        ngram_list = []
 
         if input_type == "sentences":  
             # Create n-grams
             ngram_list = self.generate_ngrams_for_sent(input)
 
         elif input_type == "words":
-            ngram_list = self.generate_ngrams_for_words(input)
-        
+            ngram_list = self.generate_ngrams_for_words(input)   
         else: 
-            warnings.warn("Warning: input_type is unknown, MarkovModel cannot be built.")
+            warnings.warn("Unknown input_type. Use 'sentences' or 'words'.")
             return
-
-        print(ngram_list)
         
-        # Count occurrences of each n-gram
+        # Count occurrence of each n-gram and prefix
         for gram in ngram_list:
             prefix, next_token = tuple(gram[:-1]), gram[-1]
-            ngram_counts[prefix][next_token] += 1
-            total_ngrams += 1
 
-        for prefix, suffix_counts in ngram_counts.items():
-            prefix_total = sum(suffix_counts.values()) # total ocurrences of the prefix across all possible suffixes
-            self.marginal_probs[prefix] = prefix_total / total_ngrams # p(x)
-            for suffix, count in suffix_counts.items():
-                self.joint_probs[prefix][suffix] = count / total_ngrams # p(x, y) 
+            self.ngram_counts[(prefix, next_token)] += 1
+            self.prefix_counts[prefix] += 1
+            self.total_ngrams += 1
+
+        # Normalize to conditional probabilities P(y|x) = P(x,y) / P(x)
+        for (prefix, next_token), count in self.ngram_counts.items():
+            self.normalized_probs[(prefix, next_token)] = count / self.prefix_counts[prefix]
+
+        # Compute entropy for each prefix
+        for (prefix, next_token), prob in self.normalized_probs.items():
+            if prob > 0:
+                # accumulate –prob·log₂(prob) for each next_token
+                self.entropy_map[prefix] += - prob * log2(prob)
 
 
+        """
+        print(f"normalized_probs: {self.normalized_probs}")
+        print(f"entropy_map: {self.entropy_map}")
+        print(f"prefix_counts: {self.prefix_counts}")
+        print(f"ngram_counts: {self.ngram_counts}")
+        """
     
+
+    def compute_conditional_entropy(self):
+        """
+        Compute the conditional entropy for each n-gram in the model.
+        """
+        total_entropy = 0.0
+        for prefix, prefix_entropy in self.entropy_map.items():
+            p_prefix = self.prefix_counts[prefix] / self.total_ngrams  # = P(x)
+            total_entropy += p_prefix * prefix_entropy # sum of P(x) * H(y|x) for all prefixes
+        return total_entropy
+
     def generate_ngrams_for_sent(self, input_list):
         """
         Generate padded n-grams from a list of syllables.
         input_list is a flat list of all sentences in the data
         """
-        return list(ngrams(input_list, self.n, pad_left=True, pad_right=True, 
-                           left_pad_symbol="<BOS>", right_pad_symbol="<EOS>"))
+        return list(ngrams(input_list, self.n))
 
     def generate_ngrams_for_words(self, input_list):
         """
