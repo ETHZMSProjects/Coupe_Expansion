@@ -3,38 +3,40 @@ import pandas as pd
 import warnings
 import re
 from pathlib import Path
+import numpy as np
 
 def update_values_in_csv(language_to_update, value, n):
-    if n == 1:
-        model = "unigram"
-    elif n == 2:
-        model = "bigram"
-    elif n == 3:
-        model = "trigram"
-    elif n == 4:
-        model = "4gram"
-    else:
+    model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
+    if not model:
         raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
 
     column = f"ID_{model}_esidaine"
 
-    # Check if the column exists, if not, create it with NaN values
-    if column not in summary_df.columns:
-        summary_df[column] = pd.NA
-
-    #Read the summary CSV file
     summary_df = pd.read_csv('syll_comparison_coupe_esidaine.csv')
 
-    # Update the respective column (value type) for that language
-    summary_df.loc[summary_df['Language'] == language_to_update, column] = value
+    # Check if the column exists, if not, create it with NaN values
+    if column not in summary_df.columns:
+        summary_df[column] = np.nan
 
-    # Step 5: Save the updated DataFrame to the CSV file
+
+    # If value is a list, update info_rate for each speaker of that language
+    if isinstance(value, list):
+        # Ensure the length of the value list matches the number of speakers for the language
+        language_speakers = summary_df[summary_df['Language'] == language_to_update]
+        if len(value) != len(language_speakers):
+            raise ValueError("The length of the value list must match the number of speakers for the specified language.")
+
+        for idx, val in zip(language_speakers.index, value):
+            summary_df.at[idx, column] = val
+    else: 
+        summary_df.loc[summary_df['Language'] == language_to_update, column] = value
+
+    # Save the updated DataFrame to the CSV file
     summary_df.to_csv('syll_comparison_coupe_esidaine.csv', index=False)
-
     print(f"Updated {column} for language {language_to_update} with value {value}.")
 
 
-def get_info_rate(info_density):
+def get_info_rate(info_density, language):
     """
     Calculates the information rate based on the provided information density.
     The function assumes:
@@ -46,20 +48,28 @@ def get_info_rate(info_density):
     Returns:
         float: Information rate per second
     """
-    file_path = r"C:\Users\emill\Documents\GitHub\Coupe_Expansion\InfoRateData.csv"
-    
-    # Read the CSV file
+    file_path = r"C:/Users/emill/Documents/GitHub/Coupe_Expansion/InfoRateData.csv"
     df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
 
-    # Extract the columns "nsyll" and "phonationtime"
-    nsyll = df['nsyll']
-    phonationtime = df['phonationtime']
+    # Filter rows where the Language matches
+    language_df = df[df['Language'] == language]
 
-    speech_rate = nsyll / phonotationtime
+    # Initialize an empty list to store info_rate values
+    info_rate_values = []
 
-    # Calculate information rate per second
-    info_rate = info_density * speech_rate 
-    return info_rate
+    # Iterate through each speaker's data
+    for _, row in language_df.iterrows():
+        nsyll = row['nsyll']
+        phonationtime = row['phonationtime']
+
+        # Calculate speech rate
+        speech_rate = nsyll / phonationtime
+
+        # Calculate information rate
+        info_rate = info_density * speech_rate
+        info_rate_values.append(info_rate)
+
+    return info_rate_values
 
 
 def get_word_data(path):
