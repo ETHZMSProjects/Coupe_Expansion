@@ -5,12 +5,15 @@ import re
 from pathlib import Path
 import numpy as np
 
-def update_values_in_csv(language_to_update, value, n):
+def update_values_in_csv(language_to_update, value, n, value_type):
     model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
     if not model:
         raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
 
-    column = f"ID_{model}_esidaine"
+    if value_type == "ID":
+        column = f"ID_{model}_esidaine"
+    elif value_type == "IR":
+        column = f"IR_{model}_esidaine"
 
     summary_df = pd.read_csv('syll_comparison_coupe_esidaine.csv')
 
@@ -33,7 +36,7 @@ def update_values_in_csv(language_to_update, value, n):
 
     # Save the updated DataFrame to the CSV file
     summary_df.to_csv('syll_comparison_coupe_esidaine.csv', index=False)
-    print(f"Updated {column} for language {language_to_update} with value {value}.")
+    print(f"Updated {column}")
 
 
 def get_info_rate(info_density, language):
@@ -48,10 +51,12 @@ def get_info_rate(info_density, language):
     Returns:
         float: Information rate per second
     """
-    file_path = r"C:/Users/emill/Documents/GitHub/Coupe_Expansion/InfoRateData.csv"
+    file_path = r"C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
     df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
 
+
     # Filter rows where the Language matches
+    df['Language'] = df['soundname'].str[:3]
     language_df = df[df['Language'] == language]
 
     # Initialize an empty list to store info_rate values
@@ -59,8 +64,8 @@ def get_info_rate(info_density, language):
 
     # Iterate through each speaker's data
     for _, row in language_df.iterrows():
-        nsyll = row['nsyll']
-        phonationtime = row['phonationtime']
+        nsyll = row[' nsyll']
+        phonationtime = row[' phonationtime']
 
         # Calculate speech rate
         speech_rate = nsyll / phonationtime
@@ -68,6 +73,8 @@ def get_info_rate(info_density, language):
         # Calculate information rate
         info_rate = info_density * speech_rate
         info_rate_values.append(info_rate)
+
+    mean_IR = ...
 
     return info_rate_values
 
@@ -91,7 +98,7 @@ def get_word_data(path):
     """
 
     # Extract language from the file name
-    language = Path(path).parent.name 
+    language = path.split("/")[2]
     print(f"Language: {language}")
 
     words = []
@@ -101,7 +108,6 @@ def get_word_data(path):
         delimiter = r"[.-]"
         # Read the file
         df = pd.read_csv(path, sep="\t", encoding="utf-8") 
-        print(df.head())
      
         for _, row in df.iterrows():
             if pd.isna(row[columns[0]]):
@@ -110,7 +116,7 @@ def get_word_data(path):
 
             # Split into syllables
             word_sylls = re.split(delimiter, row[columns[0]]) 
-            print(f"word_sylls: {word_sylls}")
+            # print(f"word_sylls: {word_sylls}")
             
             # Get the frequency value
             freq = int(row[columns[1]])
@@ -118,13 +124,13 @@ def get_word_data(path):
             # Replicate the syllables by the frequency and add them to the list
             words.extend([word_sylls] * freq)
 
-    elif language  in ["CMN", "VIE", "JPN"]:
+    elif language  in ["CMN", "VIE", "JPN", "YUE"]:
         delimiter = r"[_]"
         with open(path, 'r', encoding="utf-8") as file:
             for line in file:
                 # Split the line by tab character
                 word, freq = line.strip().split('\t')
-                freq = int(freq)
+                freq = int(float(freq))
 
                 # Split into syllables
                 word_sylls = re.split(delimiter, word)
@@ -157,7 +163,7 @@ def vietnamese_ID_for_normalization():
     #print(vietnamese_df['ID'])
 
     # Compute the average ID for Vietnamese speakers
-    ID_vietnamese = vietnamese_df['ID'].mean()
+    ID_vietnamese = vietnamese_df['ID'][:1] # Taking the first ID value as baseline
 
     print("Baseline Vietnamese ID:", ID_vietnamese)
 
