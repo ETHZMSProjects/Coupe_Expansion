@@ -15,9 +15,10 @@ class MarkovModel:
         self.n = n # n-gram size
         self.ngram_counts = defaultdict(int)  # Bigram or n-gram counts
         self.prefix_counts = defaultdict(int)  # Prefix counts for normalization
-        self.normalized_probs = defaultdict(float)
+        self.cond_probs = defaultdict(float)
         self.entropy_map = defaultdict(float) # entropy_map[prefix] holds H(Y|X=prefix)
         self.total_ngrams = 0
+        self.total_prefixes = 0
 
     def build(self, input, input_type):
         """
@@ -44,33 +45,38 @@ class MarkovModel:
             self.prefix_counts[prefix] += 1
             self.total_ngrams += 1
 
-        # Normalize to conditional probabilities P(y|x) = P(x,y) / P(x)
-        for (prefix, next_token), count in self.ngram_counts.items():
-            self.normalized_probs[(prefix, next_token)] = count / self.prefix_counts[prefix]
+        self.total_prefixes = len(self.prefix_counts)
 
-        # Compute entropy for each prefix
-        for (prefix, next_token), prob in self.normalized_probs.items():
-            if prob > 0:
-                # accumulate –prob·log₂(prob) for each next_token
-                self.entropy_map[prefix] += - prob * log2(prob)
-
-
-        """
-        print(f"normalized_probs: {self.normalized_probs}")
-        print(f"entropy_map: {self.entropy_map}")
-        print(f"prefix_counts: {self.prefix_counts}")
-        print(f"ngram_counts: {self.ngram_counts}")
-        """
+        # print("----joint probs-----")
+        for (prefix, next_token), joint_count in self.ngram_counts.items():
+            marginal_prob = self.prefix_counts[prefix] / self.total_ngrams
+            joint_prob = joint_count / self.total_ngrams  # P(x,y)
+            self.cond_probs[(prefix, next_token)] = joint_prob / marginal_prob # P(y|x)
     
 
     def compute_conditional_entropy(self):
         """
-        Compute the conditional entropy for each n-gram in the model.
+        Compute the conditional entropy H(Y|X) = Σ P(x) * H(Y|X=x)
+        where:
+            - P(x) = prefix frequency / total ngrams
+            - P(y|x) = count(x, y) / count(x)
+            - H(Y|X=x) = - Σ P(y|x) * log2(P(y|x))
         """
+        prefix_entropy = defaultdict(float)
+
+        # Compute H(Y|X)
+        for (prefix, next_token), joint_count in self.ngram_counts.items():
+                cond_prob = self.cond_probs[(prefix, next_token)]  # P(y|x)
+                if cond_prob > 0: 
+                    prefix_entropy[prefix] += cond_prob * (- log2(cond_prob)) # H(Y|X=x) = -Σ P(y|x) * log2(P(y|x))
+
+
+        # Compute the overall entropy by weighting H(Y|X=x) by P(x)
         total_entropy = 0.0
-        for prefix, prefix_entropy in self.entropy_map.items():
-            p_prefix = self.prefix_counts[prefix] / self.total_ngrams  # = P(x)
-            total_entropy += p_prefix * prefix_entropy # sum of P(x) * H(y|x) for all prefixes
+        for prefix, cond_entropy in prefix_entropy.items():
+            marginal_prob = self.prefix_counts[prefix] / self.total_ngrams  # P(x)
+            total_entropy += marginal_prob * cond_entropy # H(Y|X) = Σ P(x) * H(Y|X=x)
+
         return total_entropy
 
     def generate_ngrams_for_sent(self, input_list):
@@ -93,6 +99,7 @@ class MarkovModel:
             if len(syllables_per_word) >= self.n: 
                 word_ngrams  = list(ngrams(syllables_per_word, self.n))
                 ngrams_per_word.extend(word_ngrams)
+        print(f"ngram examples: {ngrams_per_word[:5]}")
         return ngrams_per_word
 
     def save_model(self, language, input_type):
