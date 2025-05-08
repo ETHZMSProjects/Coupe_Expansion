@@ -76,7 +76,7 @@ The models currently support datasets consisting of phonetically transcribed wor
 ## Computed Metrics
 
 This project computes:  <br/> 
-<img src="emillys_code/formulas.png" alt="Formulas" width="400"/>
+<img src="emillys_code/images/formulas.png" alt="Formulas" width="400"/>
 
 ---
 ## Running the Pipeline
