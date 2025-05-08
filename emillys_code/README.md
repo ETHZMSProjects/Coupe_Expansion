@@ -12,7 +12,7 @@ across languages that is around 39 bits/s.
 
 ##  Table of Contents
 
-- [📁 Repository Structure](#-repository-structure)  
+- [Repository Structure](#-repository-structure)  
 - [ Supported Languages](#-supported-languages)  
 - [ Processing Types](#-processing-types)  
 - [ Desciption of the Pipeline](#-description-of-the-pipeline)
@@ -20,7 +20,7 @@ across languages that is around 39 bits/s.
 - [🚀 Running the Pipeline](#-running-the-pipeline)  
 - [ Visualizations](#-visualizations)  
 - [ References](#-references)  
-- [👤 Author](#-author)
+- [ Author](#-author)
 
 ---
 
