@@ -73,7 +73,7 @@ The models currently support datasets consisting of phonetically transcribed wor
 
 ---
 
-## Computed Metrics
+## 📏 Computed Metrics
 
 This project computes:  <br/> 
 <img src="emillys_code/images/formulas.png" alt="Formulas" width="400"/>
@@ -121,14 +121,14 @@ p(('i1',) -> 'Qai4') = 0.0556
 
 ---
 
-## Visualizations
+## 📈 Visualizations
 
 Run `plotting.ipynb` to generate plots for:
 
 - Information Rate Comparison across Languages  
 - Information Rate vs. N-gram Order
 
-## References
+## 📖 References
 
 Coupé, C., Oh, Y. M., Dediu, D., & Pellegrino, F. (2019). Different languages, similar encoding efficiency: Comparable information rates across the human communicative niche. Science advances, 5(9), eaaw2594. https://doi.org/10.1126/sciadv.aaw2594 <br/>
 
