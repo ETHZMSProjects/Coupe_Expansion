@@ -12,12 +12,12 @@ across languages that is around 39 bits/s.
 
 ##  Table of Contents
 
-- [Repository Structure](#-repository-structure)  
+- [ Repository Structure](#-repository-structure)  
 - [ Supported Languages](#-supported-languages)  
 - [ Processing Types](#-processing-types)  
 - [ Desciption of the Pipeline](#-description-of-the-pipeline)
 - [ Computed Metrics](#-computed-metrics)  
-- [🚀 Running the Pipeline](#-running-the-pipeline)  
+- [ Running the Pipeline](#-running-the-pipeline)  
 - [ Visualizations](#-visualizations)  
 - [ References](#-references)  
 - [ Author](#-author)
@@ -79,7 +79,7 @@ This project computes:  <br/>
 <img src="emillys_code/images/formulas.png" alt="Formulas" width="400"/>
 
 ---
-## Running the Pipeline
+## 🚀 Running the Pipeline
 
 #### Requirements: 
 - Folder with the word data for the given languages
