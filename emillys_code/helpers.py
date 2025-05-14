@@ -4,6 +4,11 @@ import warnings
 import re
 from pathlib import Path
 import numpy as np
+import panphon
+from panphon.segment import Segment
+import regex
+from segments.tokenizer import Tokenizer
+
 
 def update_values_in_csv(language_to_update, value, n, value_type):
     model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
@@ -53,7 +58,7 @@ def get_info_rate(info_density, language):
     Returns:
         float: Information rate per second
     """
-    file_path = r"C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
+    file_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
     df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
 
 
@@ -79,10 +84,9 @@ def get_info_rate(info_density, language):
     return info_rate_values
 
 
-def get_word_data(path):
+def get_word_data(path, processing_type):
     """
-    Reads a CSV file containing word frequency data and returns a dictionary 
-    mapping each word to its frequency.
+    Reads a CSV file containing word frequency data and splits the words into syllables/characters/ phonemes
 
     The function assumes:
     - The CSV file is tab-separated (`\t`)
@@ -105,13 +109,13 @@ def get_word_data(path):
     if language in ["FRA", "DEU"]:
         if language == "FRA":
             columns = ["syll", "freqfilms2"]
-            delimiter = r"[.-]"
+            syll_delimiter = r"[.-]"
      
         if language == "DEU":
             columns = ["PhonStrsDISC", "Word Mann"]
-            delimiter = r"-"
+            syll_delimiter = r"-"
     
-            # Use the correct reader for Excel
+         # Use the correct reader for Excel
         if path.endswith(".xlsx"):
             df = pd.read_excel(path, engine="openpyxl") 
             df = df[df["Word Mann"] > 0]
@@ -121,44 +125,88 @@ def get_word_data(path):
 
         for _, row in df.iterrows():
             # Remove unwanted characters
-            # Basic list of German IPA vowels for checking
-            ipa_vowels = "aeiouyɛœøɐɪʊəɔ"
+            print(f"word: {row[columns[0]]}")
+            cleaned_word = clean_ipa_str(row[columns[0]]) 
+            print(f"cleaned word: {cleaned_word}")
+              
 
-            # Filter syllables 
-            cleaned = re.sub(r"[§.'=/()|&]", "", row[columns[0]])
-            cleaned = cleaned.replace("&p", "")  
-            row[columns[0]] = cleaned.strip()
+            # Split into the respective linguistic unit
+            if processing_type == "sylls": 
+                word_splitted = tokenize_sylls(cleaned_word, syll_delimiter)
+            elif processing_type == "chars": 
+                word_splitted = tokenize_chars(cleaned_word)
+            elif processing_type == "phonemes": 
+                word_splitted = tokenize_phonemes(cleaned_word)
+            else: 
+                raise ValueError(f"The processing type '{processing_type}' is not supported yet.")
 
-            # Split into syllables
-            word_sylls = re.split(delimiter, row[columns[0]]) 
-            
-            # Get the frequency value
+             # Get the frequency value
             freq = int(row[columns[1]])
+            print(f"splitted with respect to {processing_type}: {word_splitted}")
 
             # Replicate the syllables by the frequency and add them to the list
-            words.extend([word_sylls] * freq)
+            words.extend([word_splitted] * freq)
+
     elif language  in ["CMN", "VIE", "JPN", "YUE", "ENG"]:
         with open(path, 'r', encoding="utf-8") as file:
             for line in file:
                 # Split the line by tab character
                 word, freq = line.strip().split('\t')
                 if language == "ENG":
-                    delimiter = r'-.'
-                    unwanted_chars = r"[§.=_]"
+                    syll_delimiter = r'[-.]'
                 else: 
-                    delimiter = r"[_]"
-                    unwanted_chars = r"[§.=]"
+                    syll_delimiter = r"[_]"
                 
                 # Remove unwanted characters
-                cleaned = re.sub(unwanted_chars, "", word)
-                word = cleaned.strip()
+                print(f"word: {word}")
+                cleaned_word = clean_ipa_str(word) 
+                print(f"processing_type: {processing_type}")
+                print(f"cleaned word: {cleaned_word}")
 
-                # Split into syllables
-                word_sylls = re.split(delimiter, word)
-
+                if processing_type == "sylls": 
+                    word_splitted = tokenize_sylls(cleaned_word, syll_delimiter)
+                elif processing_type == "chars": 
+                    word_splitted = tokenize_chars(cleaned_word)
+                elif processing_type == "phonemes": 
+                    word_splitted = tokenize_phonemes(cleaned_word)
+                else: 
+                    raise ValueError(f"The processing type '{processing_type}' is not supported yet.")
+                
                 freq = int(float(freq))
+                print(f"splitted with respect to {processing_type}: {word_splitted}")
+                
 
-                # Replicate the syllables by the frequency and add them to the list
-                words.extend([word_sylls] * freq)
+                # Replicate the word by its frequency 
+                words.extend([word_splitted] * freq)
 
     return words
+
+# Initialize the Segment class for tokenization
+seg = Segment(names=panphon.symbols.ipa_names)
+
+def get_phonemes(language):
+    # Load PHOIBLE data
+    url = "https://raw.githubusercontent.com/phoible/dev/master/data/phoible.csv"
+    phoible = pd.read_csv(url, low_memory=False)
+
+    # List of target languages and their selected inventories
+    inventories = {
+        'cmn': [2457],
+        'deu': [2398],
+        'eng': [2177],
+        'fra': [2182],
+        'jpn': [2196],
+        'vie': [2462],
+        'yue': [2309]
+    }
+     # Filter the dataframe to only include the rows for the target languages and selected inventories
+    filtered_df = phoible_df[phoible_df['ISO6393'].str.lower() == language.lower()]
+    filtered_df = filtered_df[filtered_df['InventoryID'].isin(inventories.get(language.lower(), []))]
+    
+    filtered_df['PhonemeLength'] = filtered_df['Phoneme'].apply(lambda x: len(str(x)))
+    ordered_data = filtered_df.sort_values(by='PhonemeLength', ascending=False)
+
+    # Select the relevant columns (Phoneme and Allophones)
+    filtered_df = filtered_df[['ISO6393', 'Phoneme', 'Allophones']]
+    return filtered_df
+    
