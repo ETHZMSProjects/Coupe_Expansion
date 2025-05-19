@@ -1,0 +1,911 @@
+Passage O1
+CAT: Tinc un problema amb el descalcificador. El nivell d'aigua és massa alt i l'aigua que sobra vessa
+contínuament. Poden enviar-me un tècnic el dimarts al matí, per favor? És l'únic dia que em va bé
+aquesta setmana. Els estaré agraït si em poden confirmar la cita per escrit.
+CMN: 我的软水机出了点问题。水位太高，而且总是溢水。麻烦你周二上午派个技术员来看看
+？这个星期我只有这天有空。再书面确认一下的话，就太感谢了。
+DEU: Ich habe da ein Problem mit meinem Boiler. Das Überdruckventil tropft ständig, weil der
+Wasserstand wohl zu hoch ist. Könnten Sie mir bitte Dienstag früh einen Klempner schicken? das ist
+leider der einzige Tag in dieser Woche, an dem ich Zeit habe. Ich wäre Ihnen dankbar, wenn Sie mir
+den Termin schriftlich bestätigen würden.
+ENG: I have a problem with my water softener. The water-level is too high and the overflow keeps
+dripping. Could you arrange to send an engineer on Tuesday morning please? It's the only day I can
+manage this week. I'd be grateful if you could confirm the arrangement in writing.
+EUS: Arazo bat dut nire ur bigungailuarekin. Ur gehiegi dauka eta isurbidea tantaka ari da etengabe.
+Arren, bidaliko zenidakete teknikariren bat astearte goizerako? Aste honetan libre daukadan egun
+bakarra da. Hitzordua idatziz baieztatzea eskertuko nizueke.
+FIN: Minulla on ongelmia vedenpehmentimeni kanssa. Veden taso on liian korkealla, ja ylivuotoputki
+vuotaa. Voisitteko lähettää jonkun katsomaan sitä tiistaiaamuna? Se on ainoa sopiva päivä minulle
+tällä viikolla. Olisin kiitollinen kirjallisesta vahvistuksesta.
+FRA: J’ai un problème avec mon adoucisseur d’eau. Le niveau d’eau est trop élevé et le trop-plein
+n’arrête pas de goutter. Est-ce que vous pourriez vous arranger pour envoyer un technicien mardi
+matin s’il vous plaît ? C’est le seul jour possible pour moi cette semaine. Je vous serai reconnaissant
+de me confirmer ce rendez-vous par écrit.
+HUN: Gondom van a vízlágyító berendezéssel. A vízszint túl magas, és a túlfolyó állandóan csöpög.
+Tudna intézkedni arról, hogy kijöjjön egy szakember kedden reggel? Ez az egyetlen nap a héten,
+amikor el tudom intézni. Megköszönném, ha írásban is megerősítené, amit megbeszéltünk.
+ITA: Il mio depuratore dell'acqua non funziona. Il livello dell'acqua e' troppo alto e l'acqua comincia a
+traboccare. Puo' mandarmi un idraulico martedi' mattina per favore? E' l'unico giorno della settimana
+possibile per me. Puo' mandarmi una risposta scritta? Grazie.
+JPN: 浄水器の調子が悪いです。水位が高すぎるようで、水が漏れ続けています。申し訳あり
+ませんが、火曜日の午前中に直しに来て下さいませんか。今週は火曜日しか都合がつかない
+ものですから。日程をご確認の上、手紙にてお知らせいただければ幸いです。
+KOR: 연수기가 고장났습니다. 수위가 너무 높아서 물이 계속 넘치거든요. 화요일 아침에 기사
+한 분을 보내줄 수 있으세요? 제가 이번주에는 그날 밖에 시간이 안되거든요. 정확한 일정을
+문자로 보내주시면 감사하겠습니다.
+SPA: Tengo un problema con mi descalcificador. El nivel de agua es demasiado alto y el rebosadero
+gotea constantemente. ¿Por favor, podría enviarme un técnico el martes por la tarde? Es el único día
+que me va bien esta semana. ¿Me podrían llamar por teléfono antes de venir?
+SRP: Imam problem sa veš mašinom. Nivo vode je previsok, i ne prestaje da kaplje. Da li biste mogli
+da pošaljete tehničara u utorak ujutru? To je jedini dan ove nedelje kada sam slobodan. Bio bih vam
+zahvalan ako biste mi napismeno potvrdili dolazak.
+THA: ถังกรองความกระด้างของฉันมีปัญหา ระดับของน ้าสูงเกินไปและมีน ้าหยดตลอดเวลา กรุณาจัดส่งวิศวกรมาเช้าวันอังคาร
+ซึ่งเป็นวันเดียวที่ฉันว่างในสัปดาห์นี้ จะดีมากถ้าคุณจะยืนยันการจัดการเป็นลายลักษณ์อักษร
+TUR: Su arıtma makinemle ilgili bir sorunum var. Su seviyesinin sürekli fazla olduğunu gösteriyor ve
+su taşmasından dolayı sızıntı oluyor. Salı sabah bir teknisyen gönderebilir misiniz, lütfen? Bu hafta
+içinde uygun olduğum tek gün, Salı sabah. Bu randevuyu yazılı olarak da onaylarsanız çok memnun
+olurum.
+VIE: Máy lọc nước nhà tôi bị hỏng; nước cứ tràn ra bên ngoài. Anh làm ơn cho thợ đến sửa giúp tôi
+vào sáng thứ ba tới được không? Tôi chỉ rỗi vào mỗi hôm đó thôi. Nếu anh đồng ý; thì hãy gửi giấy
+báo lại cho tôi.
+YUE: 我個濾水器有D問題。佢水位太高，成日漏水。你可唔可以派人星期二朝早上嚟睇下？哩
+個星期我浄係得哩日得閒。最好你地可以書面確認哩日la。
+Passage O2
+CAT: Si us plau, passi'm amb el departament de reclamacions. La reparació de la canonada principal al
+costat de casa no ha quedat bé, i s'ha inundat el meu soterrani. A més, el Departament de serveis no va
+ser d'allò més considerat, i tots els tècnics estan ocupats durant les properes dues setmanes. Se suposa
+que he de tenir el soterrani com una piscina fins llavors?
+CMN: 请转投诉部。我家外面的总水管没修好，搞得我的地下室发大水。你们水务部真是不负
+责啊。下两个星期所有维修人员都已经安排出去了。难道我一直要把地下室当游泳池来用啊？
+DEU: Verbinden Sie mich bitte mit der Beschwerdeabteilung. Die Reparatur an der
+Hauptwasserleitung vor meinem Haus ist nicht ordentlich durchgeführt worden: mein Keller steht jetzt
+unter Wasser. Die Angestellten des Wasserwerks waren überhaupt nicht hilfsbereit. Sie haben mich
+damit abgefertigt, daß alle Reparaturtrupps für die nächsten zwei Wochen schon ausgebucht sind. Soll
+ich meinen Keller in der Zwischenzeit etwa als Schwimmbad benutzen?!
+ENG: Please put me through to the complaints department. The repair to the water main outside my
+house was unsuccessful, and my cellar's flooded. Your Water Services Department was singularly
+unsympathetic. All their repair teams are apparently booked out for the next two weeks. Am I
+supposed to use the cellar as a swimming pool till then?
+EUS: Kexen sailarekin hitz egin nahi nuke, mesedez. Etxe kanpoko hodi nagusia ez didate konpondu,
+eta sotoa urez bete zait. Ur Zerbitzuko Departamendukoek axolagabe jokatu dute. Iturgin guztiak
+hartuta egongo omen dira bi astez. Ordura arte sotoa igerilekutzat erabili behar ote dut?
+FIN: Voisitteko yhdistää minut valitusosastollenne. Päävesijohdon korjaus taloni edessä epäonnistui,
+ja minun kellarini tulvii. Teidän vesihuolto-osastonne oli erittäin tympeä. Ilmeisesti kaikki heidän
+korjaajansa ovat varattuja seuraavat kaksi viikkoa. Pitääkö minun käyttää kellariani uima-altaana
+siihen asti?
+FRA: Pouvez-vous me passer le service des réclamations s’il vous plaît ? L’arrivée d’eau à l’extérieur
+de chez moi n’a pas été réparée correctement et ma cave est inondée. Votre service des eaux a été
+particulièrement désagréable. Toutes leurs équipes de réparation sont apparemment occupées pendant
+les deux prochaines semaines. Je suis censé utiliser ma cave comme piscine en attendant ?
+HUN: Kérem, kapcsolja az ügyfélszolgálatot. Eredménytelenre sikerült a házamon kívül található fő
+vízvezetéknek a megjavítása, és a víz elárasztotta a pincémet. Az Önök Vízszolgáltató Osztálya
+rendkívül ellenszenves volt. Úgy tűnik, az összes szerelő csapatuk elfoglalt az elkövetkező két hétben.
+Addig talán uszodának használjam a pincét?
+ITA: Pronto, mi passi l'ufficio reclami per favore. I lavori di riparazione delle condutture dell'acqua
+nella mia strada hanno provocato l'allagamento della cantina. Pare che tutte le squadre di soccorso
+idraulico siano occupate per le prossime due settimane. Pensate che nel frattempo possa usare la
+cantina come piscina?
+JPN: カスタマーサービスセンターをお願いします。我が家の前の水道管の修復工事がずさん
+だったため、うちの地下室が水浸しになっています。御社の給水サービス係は非常に不愉快
+な方で、「この先２週間、すべての修復スタッフの予定はつまっている」の一点張りでした
+。その間うちの地下室を「水泳プールとして利用しておけ」とでもおっしゃるおつもりなの
+でしょうか。
+KOR: 고객 불만 신고 센터로 연결 부탁합니다. 저희 집 밖의 하수관 수리가 잘못되어서
+지하실이 물에 잠겼거든요. 배관보수 부서가 아주 불친절하던데요. 듣자하니 모든 보수팀의
+일정이 앞으로 2주 동안은 차있대요. 그때까지 제가 지하실을 수영장으로 사용해야 합니까?
+SPA: Por favor, póngame con el departamento de reclamaciones. Con la reparación de la cañería
+exterior de mi casa me han hecho una chapuza y se ha inundado el sótano. Su Departamento de
+Servicios al Cliente no me ha hecho ningún caso. Me han dicho que todos los fontaneros están
+ocupados durante las dos próximas semanas. ¿Se supone que hasta que vengan tengo que utilizar el
+sótano como piscina?
+SRP: Molim vas, spojite me sa odeljenjem za žalbe. Nisu uspeli da mi poprave vodovodnu cev, pa je
+podrum poplavljen. U Vodovodu nisu imali nimalo razumevanja. Sve službe za popravke su im
+navodno zauzete tokom naredne dve nedelje. Da li do tada da se u podrumu kupam kao u bazenu?!
+THA: กรุณาส่งเรื่องของฉันไปที่แผนกร้องเรียน การซ่อมระบบน ้าปะปาที่บ้านของฉันไม่สาเร็จ น ้าท่วมที่ห้องใต้ดิน
+ฝ่ายบริการของคุณดูเหมือนจะไม่สนใจ ฝ่ายซ่อมแซมของคุณจะไม่มีเวลามาซ่อมให้ภายในสองอาทิตย์ จะให้ฉันใช้ห้องใต้ดินเป็นสระว่ายน ้าเหรอ ?
+TUR: Lütfen beni şikayetler ile ilgilenen birime bağlar mısınız? Evimin dışındaki ana boru iyi tamir
+edilmedi. Bu yüzden kilerimi su bastı. Sizin “Su Hizmetleri Destek Biriminiz” bu konuda hiç yardımcı
+olmuyor. Bütün tamir ekiplerinin önümüzdeki iki hafta süresince dolu olduğunu söylüyorlar. Bu benim
+kilerimi iki hafta süresince havuz gibi kullanacağım anlamına mı geliyor?
+VIE: Xin vui lòng chuyển máy cho tôi gặp bộ phận giải đáp thắc mắc khách hàng. Các anh thợ đã đến
+sửa đường ống nước trước cửa nhà tôi; nhưng chưa xong; nước vẫn chảy làm ngập tầng hầm nhà tôi.
+Tôi đã gọi điện đến thông báo nhưng người ta trả lời tôi là tất cả các đội thợ sửa ống nước đều bận
+trong hai tuần tới. Tôi thực sự không biết phải làm gì nữa. Nếu cứ tình hình này thì tầng hầm nhà tôi sẽ
+trở thành bể bơi.
+YUE: 唔該幫我駁去投訴部門呀。我屋企出面嘅總自來水管仲未整好，搞到我屋企地牢水浸。
+你哋水務署真係不負責任，話啲師父哩兩個禮拜都已經排滿晒就算數。唔通叫我哩幾日將個地
+牢當泳池用呀？
+Passage O3
+CAT: Aquí el Servei Municipal d'Incendis. Estem intentant localitzar la persona que ha realitzat una
+trucada d'emergència sense donar la seva informació personal. Sembla ser que es troba a la xarxa local,
+s'ha connectat a la nostra línia amb número 93 0762 584. S'agrairà qualsevol esforç per localitzar-lo
+immediatament, ja que per la seva veu ha semblat que era molt urgent.
+CMN: 喂，市消防队。我们正在定位一个报火警的位置，他没有提供详细信息就挂了。他用的
+是市话，打的是我们762 854这条线。我们希望立即追踪这个人，因为他听上去很绝望，谢谢。
+DEU: Hier ist die örtliche Feuerwehrzentrale. Wir versuchen, einen Notruf zu orten, der aufgehängt
+hat, ohne genaue Angaben zu machen. Es hörte sich nach einem Ortsgespräch an. Er wählte unsere
+direkte Nummer, sieben neun zwei fünf acht fünf. Wir müssen ihn schnellstens finden, weil er sich
+völlig aufgelöst anhörte.
+ENG: Municipal Fire Service speaking. We're trying to locate an emergency caller who rang off
+without giving any personal details. He appeared to be on the local network. He connected on our line
+number 762 584. We'd appreciate immediate attempts to trace him because he sounded desperate.
+EUS: Udal Suhiltzaileen Zerbitzua hizketan. Larrialdi dei baten egileren bila gabiltza, datu pertsonalik
+eman gabe eskegi baitu. Bertoko telefono batetik izan da, antza. 762 584 zenbakira deitu digu. Hura
+aurkitzeko zeinahi aztarna eskertuko genuke, larri zela ematen zuen eta.
+FIN: Kunnan palolaitos puhelimessa. Me yritämme paikallistaa hätäpuhelun tehnyttä henkilöä, joka
+katkaisi puhelun antamatta yhteystietojaan. Hän soitti paikallispuhelun. Hän soitti numeroomme 762
+584. Arvostaisimme kovasti välitöntä jäljitysyritystä, koska hän kuulosti epätoivoiselta.
+FRA: Ici les pompiers municipaux. Nous essayons de localiser l’auteur d’un appel d’urgence qui a
+raccroché sans donner aucun détail. Il semble qu’il était sur le réseau local. Il nous a appelés sur notre
+ligne, au numéro 762 584. Merci d’essayer de le localiser immédiatement, car il semblait désespéré.
+HUN: Itt a Városi Tűzoltóság. Egy sürgős hívót próbálunk megtalálni, aki letette a kagylót anélkül,
+hogy bármilyen személyes adatot megadott volna. Valószínűleg helyi hívás volt. A 762 584-es
+számunkat tárcsázta. Értékelnénk minden azonnali kísérletet a felkutatására, mert kétségbeesettnek
+tűnt.
+ITA: E' il servizio municipale antincendio. Stiamo cercando di localizzare una chiamata di emergenza
+interrotta prima di avere l'indirizzo. Il nostro telefono che ha ricevuto la chiamata e' il cinque-otto-
+zero-zero, potreste riuscire a rintracciarne l'autore? Sembrava piuttosto sconvolto.
+JPN: もしもし、こちらは市の消防局です。先ほど緊急通報があったのですが、通報者が名前
+や場所を言わずに電話を切ってしまったので、その位置の特定を試みています。市内通話だ
+ったようで、こちらの番号76の2584にかけてきました。通報者は絶望的な様子でしたので、
+緊急を要します。その方の追跡調査をお願い致します。
+KOR: 동작 소방서입니다. 저희는 긴급 전화 도중 아무런 개인 정보를 남기지 않고 전화를 끊은
+분의 위치를 추적하고 있습니다. 이 분은 우리 관할 지구내에 있는 것 같았습니다. 저희 번호
+762-584로 연결되었거든요. 위급한 상황인 것 같으므로 즉각적인 조치를 취해주시면
+감사하겠습니다.
+SPA: Servicio Municipal de Bomberos al habla. Estamos tratando de localizar una llamada urgente.
+Colgaron sin dar ningún detalle personal. Al parecer nos llamaron desde esta ciudad, al número 762
+584. Agradeceríamos cualquier cosa que nos ayudara a identificarle puesto que parecía desesperado.
+SRP: Ovde Opštinska vatrogasna služba. Pokušavamo da lociramo osobu koja nam je uputila poziv na
+broj za slučaj opasnosti, ali nije ostavila lične podatke. Izgleda da je bio na lokalnoj mreži. Priključio
+se na naš broj sedam šest dva pet osam četiri. Bili bismo vam zahvalni ako biste odmah pokušali da ga
+pronađete, zvučao je uznemireno.
+THA: สถานีดับเพลิงพูดค่ะ เราพยายามหาตาแหน่งของคนที่โทรเข้ามาแจ้งเหตุฉุกเฉิน แต่ไม่ได้ทิ้งรายละเอียดไว้ เขาโทรเข้ามาจากเครือข่ายภายในท้องถิ่น
+เขาต่อเข้ามาที่เบอร์ 762 584 เราจะยินดีมากถ้าคุณช่วยติดตามว่าเขาโทรมาจากไหนเพราะ ดูเหมือนเขาจะต้องการความช่วยอย่างเร่งด่วน
+TUR: “Belediye Yangın Biriminden” arıyorum. Telefonda detaylarını alamadığımız bir yardım
+talebine ulaşmaya çalışıyoruz. Yerel ağda kayıtlı olduğunu bulduk. 762 584 nolu telefondan bizi
+aramış. Bu yardım çağrısına ulaşmak için desteğinize ihtiyacımız var çünkü arayan kişi çok çaresiz bir
+durumdaydı.
+VIE: Bộ phận cứu hoả xin thông báo: chúng tôi đang cố gắng xác định một cuộc gọi khẩn cấp từ một
+người không rõ danh tính. Cô ta gọi đến từ số máy tám bảy sáu hai năm tám bốn. Cần phải tìm ngay cô
+gái này: cô ta có vẻ đang rất tuyệt vọng.
+YUE: 喂，呢度係慈雲山消防局。頭先有人打電話嚟報警話火竹，但係報警嗰個人仲未講低個
+人資料就收左線。佢應該係用市區電話打嚟嘅，哩度嘅號碼係762 584。佢把聲好似好絕望咁，
+唔該幫幫手查一查佢個地址，希望可以盡快搵到佢。
+Passage O4
+CAT: Per favor, prenguin nota d'un encàrrec per un taxi de matinada. El senyor Suau, de l'Avinguda
+Argentina, vol ser a la terminal 2 de l'Aeroport del Prat a les 6:15 del matí. El seu vol no surt fins a les
+7:50, però no vol tenir problemes amb l'excés d'equipatge. Si us plau, marqueu aquest encàrrec com a
+de màxima prioritat, i amb un compliment estricte de l'horari demanat. S'espera l'arribada del taxi a les
+5:30 en punt.
+CMN: 请帮忙订个早上的出租车。朝阳园的李明先生想早上6点15前到达首都机场3号航站楼。
+他的航班7点50起飞，但是他要安排超重行李托运。请优先安排并保证准时。他想你们5点半准
+时到。
+DEU: Reservieren Sie mir bitte ein Taxi für morgen früh. Herr Jürgen Schröder aus Mühlheim muß
+um sechs Uhr fünfzehn am Düsseldorfer Flughafen sein. Der Flug geht um sieben Uhr fünfzig, aber er
+muß vorher noch zur Gepäckabfertigung. Wir erwarten das Taxi genau um fünf Uhr dreißig. Ich
+verlasse mich darauf, daß Sie pünktlich sind.
+ENG: Please take a request for an early-morning taxi. Mr Spencer of Chestnut Drive wishes to be at
+Heathrow terminal 4 by 6.15 a.m. His flight's not leaving till 7.50 but he has to arrange for excess
+baggage. Mark it as top priority and ensure punctuality. He expects the car at 5.30 sharp.
+EUS: Taxi bat eskatu nahi nuke bihar goizean goizerako, mesedez. Agirrezabala jaunak goizeko
+6:15etan egon nahi luke Loiuko aireportuan, Garibai Kaletik abiatuta. Hegaldia 7:50ean da, baina
+lehendabizi ekipajea fakturatu behar du. Ez ahaztu, beraz, eta zaindu puntualtasuna. 5:30etarako zain
+izango duzue.
+FIN: Tekisin varauksen aikaiselle taksille. Herra Aalto Kuukadulta haluaisi ehtiä kentälle terminaali
+4:ään kello 6:15. Hänen lentonsa lähtee vasta 7:50, mutta hänen pitää ehtiä hoitaa
+lisämatkatavaroidensa järjestely. Varaus on erittäin tärkeä, ja täsmällisyys on taattava. Hän tahtoo
+auton paikalle tasan kello 5:30.
+FRA: Merci de noter une réservation de taxi pour tôt demain matin. Monsieur André, rue des
+châtaigniers, veut être au terminal 2 de Bordeaux à 6 heures 15. Son avion ne décolle pas avant 7
+heures 50, mais il doit régler un problème d’excédent de bagages. Notez ceci comme prioritaire et
+soyez à l’heure. Il vous attend à 5 heures trente précises.
+HUN: Kérem, vegyen fel egy taxirendelést kora reggelre. Tallósi úr, aki az Irányi utcán lakik, a
+Ferihegy 2-es terminálon szeretne lenni reggel 6 óra15 perckor. A gépe nem indul 7 óra 50 percig, de
+megoldást kell találnia a poggyásztúlsúlyra. Jegyezze fel, hogy különleges elsőbbséget élvez, és
+gondoskodjon a pontosságról. Pontosan 5 óra 30 percre várja az autót.
+ITA: Vorrei prenotare un taxi per domani mattina presto per il dottor Rossi all'Hotel Sheraton. Deve
+essere all'aeroporto per le sei e trenta. Puo' arrivare per le sei? E' richiesta la massima puntualita'. Puo'
+lasciarmi la sua sigla per favore?
+JPN: 明日の早朝、中央通りの山田様宅へタクシーを差し向けて下さい。山田様は午前6時15
+分までに関空第２ターミナルに到着することを希望されています。お客様のご搭乗便は7時
+50分発ですが、超過手荷物の手続を行う必要があるとの事です。時間厳守でお願いします。
+必ず5時半に迎えに行って下さい。
+KOR: 새벽 콜택시 요청이 들어왔습니다. 밤나무 길의 오상현씨가 오전 6시 15분까지
+인천국제공항의 제 2터미널에 가고자 하십니다. 이 분 비행기는 7시 50분에 출발하지만 초과
+수화물을 부쳐야 한답니다. 이 점을 가장 중요한 사항으로 표시해주시고 시간을
+엄수해주십시오. 이 분은 새벽 5시 30분 정각에 택시를 타고자 합니다.
+SPA: Por favor, quisiera pedir un taxi para mañana a primera hora. El señor Rodríguez, que vive en la
+de Avenida del General Martínez Campos, quiere estar en la terminal internacional de Barajas
+alrededor de las seis y cuarto de la mañana. Su vuelo no sale hasta las ocho menos diez, pero tiene que
+facturar mucho equipaje. Por favor, que no se les olvide, y sobretodo sean puntuales. El señor
+Rodríguez estará esperando el taxi a las cinco y media.
+SRP: Molim vas rezervišite mi taksi za rano ujutru. Gospodin Jovanović iz Simine ulice želi da bude
+na terminalu četiri Aerodroma Nikola Tesla najkasnije u šest i petnaest ujutru. Avion mu poleće tek u
+deset do osam ali mora da prijavi prekoračenje prtljaga. Budite tačni i neka vam ova vožnja bude prva
+na listi. Očekivaće taksi u tačno pola šest.
+THA: กรุณาจองแท๊กซี่ตอนเช้าตรู่สาหรับ คุณธีระเดช ที่ปทุมวัน เขาต้องการไปสนามบินดอนเมือง เทอร์มินอล 4 เวลา 6.15 น.
+เที่ยวบินของเขาจะออกเวลา 7.50 น. แต่เขาต้องการเผื่อเวลาส าหรับโหลดกระเป๋าสัมภาระ ช่วยท าเครื่องหมายว่าเรื่องนี้เป็นเรื่องสาคัญที่สุด
+และต้องตรงต่อเวลา เขาหวังว่าคุณจะมาถึงเวลา 5.30 น. ตรง
+TUR: Sabah erken bir saat için bir taksi rezervasyonu yaptırmak istiyorum. Bay Göksun, sabah 6.15’de
+Adana Şakirpaşa Havaalanında olmak istiyor. Aslında uçağı 7.50’de ama bagaj ile ilgili bir sorununu
+uçuştan önce çözmek zorunda. Lütfen bu rezervasyonu öncelikleriniz arasına alın ve taksinin
+zamanında gelmesine dikkat edin. Kesinlikle 6.15’de havaalanında olmak istiyor.
+VIE: Tôi muốn đặt trước một taxi đón anh Lê Anh Tuấn vào sáng sớm ngày mai; tại địa chỉ ba mươi
+ba Hàn Thuyên. Anh Tuấn phải có mặt tại sân bay Nội bài trước sáu giờ mười lăm phút. Máy bay sẽ
+cất cánh lúc bảy giờ năm mươi phút; nhưng anh ấy cần có thời gian để đăng ký hành lý quá cân. Làm
+ơn nhắn taxi phải đến đúng giờ. Anh ấy sẽ đứng đợi ở dưới nhà lúc năm giờ ba mươi phút.
+YUE: 唔該聽朝安排一架的士。陳生希望朝頭早六點三可以由佐敦道去到機場登機大樓。佢搭
+嗰班機會係七點五十起飛，但係佢搭之前要將啲行李寄倉。佢想你準時五點半到。
+Passage O6
+CAT: Estic provant de posar-me en contacte amb el senyor i la senyora Sastre, de Manacor. S'han
+traslladat a una altra zona de la ciutat. Em podria donar el seu nou telèfon, per favor? Es varen canviar
+de casa fa 3 mesos, aproximadament. A la guia telefònica encara apareixen amb les dades antigues.
+CMN: 我想联系东城的张国强夫妇。他们从朝阳新区搬到东城的。您能给我他们新的电话号码
+么？他们大约是3个月前搬的。据我所知，他们的电话号码是有记录的。
+DEU: Ich versuche, Herrn und Frau Jäger aus Löhne zu erreichen. Sie sind von der Töpfergasse
+neunundfünfzig in einen anderen Teil von Löhne gezogen. Könnten Sie mir bitte ihre neue Nummer
+geben. Sie sind vor ungefähr fünf Monaten umgezogen. So weit ich weiß, wohnen sie noch im selben
+Stadtteil.
+ENG: I'm trying to contact Mr and Mrs W. George of Swindon. They've moved from 63 Spruce Close
+to another part of Swindon. Can you give me their new number please? They moved approximately 3
+months ago. As far as I know they're not ex-directory.
+EUS: Arren, Tolosako Perurena eta Azpiazu jaun-andreekin harremanetan jartzen saiatzen ari naiz.
+Amarotz 21etik Tolosako beste alderdi batera joan dira. Haien telefono zenbaki berria ematerik
+baduzu? Duela 3 hilabete-edo aldatu ziren. Dakidanez, badute telefonoa.
+FIN: Yritän saada yhteyttä vantaalaisiin herra ja rouva Laaksoon. He muuttivat Piitie 63:sta toiseen
+osaan Vantaata. Voitteko antaa minulle heidän numeronsa, kiitos? He muuttivat noin 3 kuukautta
+sitten. Tietääkseni heidän numeronsa ei ole salainen.
+FRA: Je cherche à joindre Monsieur et Madame Georges à Toulouse. Ils ont déménagé du soixante-
+trois rue Pasteur pour s’installer ailleurs à Toulouse. Pouvez-vous me donner leur nouveau numéro s’il
+vous plaît ? Ils ont déménagé il y a environ 3 mois. Pour autant que je sache, ils ne sont pas sur liste
+rouge.
+HUN: A miskolci Lázár házaspárt próbálom elérni. Nemrég költöztek el a Gyöngyösi út 63-ból
+Miskolc egy másik részébe. Meg tudná adni az új számukat? Úgy három hónapja költözhettek el.
+Tudomásom szerint nem titkos a számuk.
+ITA: Sto cercando di parlare con i signori Fratini di Bologna che si sono trasferiti da Viale Mazzini 53
+a un'altra zona di Bologna. Potrebbe darmi il nuovo numero? Si sono trasferiti circa 3 mesi fa. Che io
+sappia non sono fuori elenco.
+JPN: 大津市の原田さん夫妻と連絡を取りたいのですが。ご夫妻は神宮町63番地から大津市内
+の別の住所へ引っ越してしまわれました。引越し先の新しい電話番号を教えていただけませ
+んか。引っ越されたのは、ほぼ3ヶ月前です。確か「電話帳非掲載者」ではなかったと思い
+ます。
+KOR: 수원에 사는 박문수씨 부부의 연락처를 찾고 있습니다. 이분들은 팔달구 63번지에서
+수원의 다른 지역으로 이사를 가셨습니다. 이분들의 새로 바뀐 전화 번호를 알 수 있을까요? 약
+3개월 전에 이사가셨거든요. 새 번호가 전화번호부에 실려있을 거라 여겨지는데요.
+SPA: Por favor, necesito localizar a los señores Ramírez de Estepona. Hace tres meses vivían en el
+Paseo de la Victoria, número 63; ahora viven en otra calle de la misma ciudad. ¿Me podría dar su
+nuevo número de teléfono? En la guía todavía aparecen con el número antiguo.
+SRP: Pokušavam da dobijem Gospodina i Gospođu Marković iz Beograda. Preselili su se iz Miloša
+Velikog pedeset i šest u drugi kraj Beograda. Možete li mi dati njihov novi broj, molim vas? Preselili
+su se pre otprilike tri meseca. Koliko znam, njihov kontakt bi trebalo da je u registru.
+THA: ฉันกาลังพยายามติดต่อ ครอบครัวกฤษดา สันกาแพง พวกเขาย้ายมาจาก บ้านเลขที่ 63 แม่ออนใต้ ที่อยู่อีกส่วนหนึ่งของสันกาแพง
+กรุณาให้เบอร์โทรศัพท์ใหม่ของพวกเขา พวกเขาย้ายมาเมื่อประมาณ 3 เดือนที่แล้ว เท่าที่ผมรู้รายชื่อของพวกเราไม่มีอยู่ในสมุดโทรศัพท์
+TUR: Bay ve Bayan Aslan’a ulaşmak istiyorum. Onlar, Yeni baraj Mahallesi 63 numaradan, Kuzey
+Adana Güzelyalı mahallesine taşındılar. Lütfen, onların yeni numarasını verebilir misiniz? Yaklaşık 3
+ay önce taşındılar. Bildiğim kadarıyla, telefon rehberinde kayıtlı değiller.
+VIE: Tôi muốn tìm số điện thoại của gia đình ông; bà Nguyễn Ðăng ở Hà Nội. Trước đây; họ sống ở
+số nhà sáu mươi; phố Bà Triệu. Họ đã chuyển nhà và tôi không có địa chỉ mới của họ. Chị có thể vui
+lòng cho tôi số điện thoại mới của họ không? Chắc họ đã chuyển nhà được ba tháng rồi. Tôi đã tìm
+trong danh bạ điện thoại nhưng không thấy số điện thoại của họ.
+YUE: 我想同住喺旺角嘅陳生陳太聯絡。佢地係由通菜街63號搬去隔離街架。你可唔可以幫我
+查下佢地嘅新電話號碼啊?佢地大概係三個月前搬過去嘅。以我所知，佢地嘅新電話號碼係仲
+未登記嘅。
+Passage O8
+CAT: Puc parlar amb el departament de reclamacions? El meu televisor va deixar de funcionar fa tres
+setmanes, se'l van endur per fer la reparació, i m'agradaria saber quan estarà arreglat. La recollida va
+ser el dia 13, i em van prometre que el tornarien en una setmana. Em faig càrrec que tenen problemes
+de subministraments, però aquest retard em sembla excessiu. Em poden donar una data límit, ja?
+CMN: 请接服务部。我的电视机已经坏了3周了，我想知道什么时候能修好。你们13号拿走的，
+说一周内还。我知道你们有供应问题，但是这也拖太久了。你能给个确定的日子么？
+DEU: Bitte verbinden Sie mich mit der Reparaturabteilung. Mein Fernseher ist nun schon seit drei
+Wochen bei Ihnen, und ich möchte wissen, wann er endlich fertig ist. Sie haben ihn nämlich am
+zwölften Juni abgeholt und versprochen, daß er in einer Woche wieder da sein wird. Ich kann ja
+verstehen, daß Sie viel zu tun haben, aber das ist wirklich etwas übertrieben. Können Sie mir jetzt bitte
+einen endgültigen Termin geben?
+ENG: Please connect me to the service department. My television has been out of action for almost
+three weeks now, and I need to know when it will be repaired. You collected it on the 13th and
+promised to return within a week. I realise you're having supply problems, but this is rather excessive.
+Can you give me a firm date now?
+EUS: Matxura sailekoekin hitz egin nahi dut, mesedez. Dagoeneko hiru aste dira nire telebista hondatu
+zela, eta jakin nahi nuke noizko konpondu behar duten. 13an etorri ziren hura jasotzera eta astebetean
+itzuliko zidatela agindu zidaten. Ulertzen dut aldagaiekin arazoren bat izatea, baina hau gehiegizkoa
+da. Zehaztuko al didazue data ziur bat behingoz?
+FIN: Voisitteko yhdistää minut palveluosastolle? Televisioni on ollut huollossa nyt melkein kolme
+viikkoa, ja haluan tietää, milloin se saadaan korjattua. Te haitte sen 13 päivä ja lupasitte palauttaa sen
+viikon sisällä. Ymmärrän, että teillä on toimitusongelmia, mutta tämä on liikaa. Voitteko antaa minulle
+nyt tarkan päivämäärän?
+FRA: Passez-moi le service après-vente s’il vous plaît. Ma télévision est en panne depuis presque 3
+semaines, et j’ai besoin de savoir quand elle sera réparée. Vous êtes venu la chercher le 13 en
+promettant de la ramener dans la semaine. Je comprends que vous ayez des problèmes
+d’approvisionnement, mais là c’est trop. Pouvez-vous me donner une date ferme maintenant ?
+HUN: Kérem, kapcsolja a vevőszolgálatot. A tévém már majd három hete nem működik, és szeretném
+tudni, mikorra javítják meg. Önök 13-án szállították be, és azt ígérték, hogy egy héten belül kész lesz.
+Megértem, hogy alkatrészproblémáik vannak, de ez már egy kicsit túlzás. Tudna végre mondani egy
+végleges időpontot?
+ITA: Pronto, e' l'elettricista? Avete il mio televisore da almeno tre settimane e vorrei sapere quando lo
+riparerete. Ve l'ho portato il 13 e avevate promesso di ridarmelo dopo una settimana. Immagino che
+abbiate avuto dei problemi, ma potete dirmi ora una data sicura per la consegna?
+JPN: サービスセンターをお願いします。テレビが故障してから既に3週間が経ちましたが、
+いつ頃直って来るのか教えていただけませんか。13日に修理に出した時には、1週間以内に
+戻ってくるとのことだったのですが。ご多忙なのは重々承知しておりますが、それにしても
+時間がかかり過ぎなのではありませんか。確実に修理から戻ってくる日を教えてください。
+KOR: 서비스 센터로 연결해주세요. 텔레비전이 고장난지 거의 3주가 되어가는데 언제쯤이면
+수리가 될지 알고 싶네요. 13일에 오셔서 텔레비전을 수거해가실 때는 일주일안으로
+수리해주신다고 하셨거든요. 자재 공급에 문제가 있는 건 알겠지만 이건 좀 심한 것 같아요.
+언제쯤 수리가 완료되는지 확실한 날짜를 좀 알려주시겠어요?
+SPA: ¿Me podría poner con el departamento de reparaciones? Mi televisor se estropeó hace tres
+semanas. Ustedes me lo vinieron a recoger el día 13 y me prometieron que estaría arreglado al cabo de
+una semana. Comprendo que hayan podido tener problemas para conseguir las piezas de recambio,
+pero me parece que el retraso es excesivo. ¿Me pueden dar una fecha concreta de una vez por todas?
+SRP: Molim vas, povežite me sa servisom. Televizor mi je pokvaren već skoro tri nedelje, i hoću da
+znam kada ćete ga popraviti. Odneli ste ga trinaestog i obećali da ćete ga vratiti u roku od nedelju
+dana. Jasno mi je da imate problema s nabavkom, ali ovo je previše. Možete li mi sada dati neki tačan
+datum?
+THA: กรุณาต่อสายของผมไปที่แผนกบริการ เครื่องรับโทรทัศน์ผมเสียมา 3 สัปดาห์แล้ว ผมต้องการทราบว่าจะซ่อมเสร็จเมื่อไร
+คุณมารับเครื่องไปตั้งแต่เมื่อวันที่ 13 และสัญญาว่าจะส่งคืนภายใน 1 สัปดาห์ ผมเข้าใจว่าคุณมีปัญหาในเรื่องการจัดส่ง แต่ว่ามันนานเกินกว่าที่จะรับได้
+กรุณาช่วยยืนยันกาหนดส่งให้ผมด้วย
+TUR: Lütfen beni ek destek birimine bağlayabilir misiniz? Televizyonum hemen hemen 3 hafta önce
+alındı. Ne zaman tamir edileceğini öğrenmek istiyorum. Ayın 13’ün de televizyonumu almıştınız ve
+bir hafta içinde geri getireceğinize söz vermiştiniz. Yoğun olduğunuzu anlıyorum fakat bu da biraz
+fazla uzun oldu. Lütfen bana kesin bir tarih verebilir misiniz?
+VIE: Tôi xin gặp bộ phận bảo hành. Ðã ba tuần nay các anh mang vô tuyến của tôi đi sửa. Tôi muốn
+biết bao giờ thì các anh sửa xong. Các anh đã đến lấy vô tuyến từ ngày mười ba và hứa sẽ mang trả
+trong tuần. Tôi biết là các anh gặp khó khăn khi tìm liên kiện thay thế; nhưng đã quá thời hạn rất lâu
+rồi. Tôi muốn các anh cho tôi một ngày hẹn chính xác.
+YUE: 唔該幫我駁去服務中心啊。我嘅電視機已經壞咗就嚟三個星期啦，我想知幾時先可以整
+返好囉。你地十三號拎去整，嗰陣明明話一個星期就會整好。我都知你們好忙，不過三星期會
+唔會長得滯啊。你地可唔可以俾個確實日期我﹖
+Passage O9
+CAT: Em podria donar una llista de restaurants en aquesta zona? Visc al carrer Pau Casals, i estava
+interessat en alguna cosa més exòtica de l'habitual. Per exemple, un restaurant tailandès. Però
+preferiria que no fos un restaurant vegetarià.
+CMN: 您能给我列个周边饭馆的名单么？我住朝阳区光华路。我对那些有异国情调的饭馆比较
+感兴趣，比如罗马利亚风格的地方。我不想要素菜馆。
+DEU: Können Sie mir sagen, welche Gaststätten bei mir in der Nähe sind? Ich wohne in der
+Goethestraße. Ich möchte mal etwas ganz neues ausprobieren. Vielleicht japanische Küche. Aber bitte
+nicht ausschließlich vegetarisch.
+ENG: Can you give me a list of the restaurants in the neighbourhood? I live in Clancy Street, NW1.
+I'm interested in something a little more exotic than usual. Perhaps a Polynesian place, for example. I'd
+prefer it not to be vegetarian.
+EUS: Nire auzoko jatetxeen zerrenda ematen zeniezadake? Salburuan bizi naiz. Ohikoa ez den zerbait
+nahi nuke. Korear bat, adibidez. Baina nahiago nuke begetarianoa ez balitz.
+FIN: Voitteko antaa minulle listan lähialueen ravintoloista? Asun Pajutiellä, Oulussa. Minua
+kiinnostaisi jokin hieman tavallista eksoottisempi. Esimerkiksi joku vietnamilainen ravintola.
+Mieluusti ei kasvisruokapaikka.
+FRA: Pouvez-vous me donner une liste des restaurants du quartier ? J’habite rue Lagny, à Nation.
+J’aimerais quelque chose d’un peu plus exotique que d’habitude, peut-être un restaurant polynésien par
+exemple. Je préférerais que ce ne soit pas végétarien.
+HUN: Tudna nekem adni egy listát a közelben lévő éttermekről? A Kisfaludy utcán lakom a hetedik
+kerületben. Valamilyen, a szokásosnál egy kicsit egzotikusabb hely érdekelne. Esetleg egy polinéziai.
+Jobban szeretném, ha nem lenne vegetáriánus.
+ITA: Puo' darmi una lista dei ristoranti nei dintorni? Preferirei qualcosa di piccolo e esotico. Forse un
+locale indiano, per esempio. Preferirei che non fosse esclusivamente vegetariano.
+JPN: この辺のレストランのリストをいただけますか。駒沢通りに住んでいるのですが、こじ
+んまりしたエスニック風のお店がいいです。例えばインド料理店とか。でも、ベジタリアン
+料理でない方が良いです。
+KOR: 저희 동네에 있는 음식점 목록 좀 알려주실 수 있나요? 저는 중구 순화동에 살고 있어요.
+평상시 먹는 것보단 좀더 이국적인 음식을 먹고 싶은데요. 예를 들면 베트남 음식점 같은
+곳이요. 채식전용은 아니었으면 좋겠네요.
+SPA: ¿Podría darme una lista de los restaurantes que hay en el barrio de Gracia? Me gustaría encontrar
+alguno fuera de lo corriente, algo exótico. Tal vez un restaurante japonés, por ejemplo. Lo que no
+quisiera es que fuera un vegetariano.
+SRP: Možete li mi dati spisak restorana u kraju? Živim u ulici Vodovodskoj, broj trinaest. Želim nešto
+malo egzotičnije nego obično. Možda neki polinežanski restoran, na primer. Voleo bih da ne bude
+vegeterijanski.
+THA: ดิฉันรบกวนขอรายชื่อร้านอาหารในย่านนี้ ฉันอยู่ที่ สุขุมวิท 62 ฉันสนใจสิ่งเล็กๆ น้อยๆ ที่แปลกใหม่มากกว่าปกติ ยกตัวอย่างเช่นที่ โพลินีเซียน
+ฉันชอบมากกว่าที่จะไม่เป็นมังสวิรัติ
+TUR: Bana çevredeki restoranların bir listesini verebilir misiniz? Özal Bulvarında oturuyorum. Her
+zamankinden daha farklı birşey yemek istiyorum. Belki bir Karadeniz yemeği. Vejetaryen bir restoran
+olmamasını tercih ederim.
+VIE: Chị có thể cho tôi xin danh sách các nhà hàng gần nơi tôi sống được không ạ? Tôi ở phường
+Cống vị; đường Ðội Cấn. Tôi muốn tìm một vài món ăn có vị cay; ví dụ như các món ăn của Thái. Tôi
+không thích các nhà hàng ăn chay.
+YUE: 可唔可以幫我整張有晒呢度附近餐廳嘅清單﹖我住係尖沙咀廣東道。我鍾意有特色嘅外
+國菜，比如話，印度菜啊之類，但最好唔係素食餐廳。
+Passage P0
+CAT: La meva dona té una agenda de vols complicada, el proper mes. Em podria recomanar les
+combinacions més econòmiques? Té una sèrie de reunions de 9 del matí a 5 de la tarda a París, Bruges,
+Frankfurt, Roma i Hamburg, en dies consecutius. Pot mirar de trobar vols en horari de tarda, i
+l'allotjament corresponent a cada jornada? No li agraden els hotels massa grans.
+CMN: 我妻子下个月有一个复杂的飞行计划。请你给建议一个最划算的安排。她要参加一系列
+会议，在上海、兰州、武汉、成都和广州连续几天，每天从上午9点到下午5点。你能建议一下
+方便的夜晚航班和合适的食宿安排吗？她不喜欢大的、不知名的酒店。
+DEU: Meine Frau braucht für den nächsten Monat gut aufeinander abgestimmte Bahnverbindungen.
+Könnten Sie mir bitte die jeweils günstigste Möglichkeit heraussuchen? Sie muß im Januar zu einer
+Reihe von Tagungen in Rom, Brüssel, Frankfurt, Köln und Mühlheim, jeweils von neun bis siebzehn
+Uhr. Würden Sie bitte Abendzüge und bequeme Hotels reservieren. Sie mag allerdings keine großen,
+unpersönlichen Häuser.
+ENG: My wife has a complicated flight schedule next month. Would you please advise me on the most
+economical arrangements? She has a series of meetings, 9am to 5pm, in Paris, Bruges, Frankfurt,
+Rome, and Hamburg on consecutive days. Can you suggest convenient evening flights and suitable
+accomodation? She doesn't like large, anonymous hotels.
+EUS: Nire emazteak hainbat hegaldi egin behar ditu datorren hilean. Aukera ekonomikoenen gainean
+aholkatu ahal didazu? Zenbait biltzar ditu, denak goizeko 5etatik 9etara, Parisen, Brujasen,
+Frankfurten, Erroman, eta Hanburgon, elkarren segidako egunetan. Esango dizkidazu arratsaldeko
+hegaldi egokienak eta ostatu hartzeko leku aproposak? Ez ditu hotel handi-hotzak gogoko.
+FIN: Minun vaimollani on hankala lentoaikataulu ensi kuussa. Voisitteko neuvoa meille halvinta
+järjestelyä? Hänellä on kokouksia yhdeksästä viiteen Lontoossa, Bruggessa, Oslossa, Roomassa ja
+Kiovassa peräkkäisinä päivinä. Voitteko ehdottaa mukavia iltalentoja ja sopivia majoituksia? Hän ei
+pidä suurista, nimettömistä hotelleista.
+FRA: Ma femme a un planning de vols compliqué le mois prochain. Pourriez-vous me conseiller sur
+les options les plus économiques s’il vous plaît ? Elle a une série de réunions de 9 heures à 17 heures à
+Paris, Bruges, Francfort, Rome et Hambourg à la suite l'une de l'autre. Pourriez-vous me suggérer des
+vols en soirée qui conviennent et des hôtels appropriés ? Elle n’aime pas les grands hôtels anonymes.
+HUN: A feleségemnek komplikált repülő menetrendje van a jövő hónapban. Tudna nekem tanácsot
+adni a leggazdaságosabb megoldást illetően? Több találkozója van reggel kilenctől délután ötig
+Párizsban, Brüsszelben, Frankfurtban, Rómában és Hamburgban, egymást követő napokon. Tudna
+javasolni megfelelő esti járatokat és alkalmas szállást? Nem szereti a nagy, névtelen szállodákat.
+ITA: Buongiorno, sono la segretaria della dottoressa Bianchi. Devo prenotare un viaggio con diverse
+tappe per il mese prossimo. Ha una serie di incontri dalle 9 alle 5, a Parigi, Ginevra, Francoforte e
+Roma, un giorno dopo l'altro. Potreste indicarmi i voli serali piu' convenienti? La dottoressa preferisce
+evitare gli alberghi troppo grandi e anonimi.
+JPN: 来月、妻がパリ、ブリュージュ、フランクフルト、ローマ及びハンブルクで行われる一
+連の会議に出席する予定です。最も経済的なフライトスケジュールをご相談したいのですが
+。会議は4日間で、連日午前9時から午後5時までです。夕方の便と、宿泊のお勧めプランが
+ありますか。ちなみに、妻は大きくても有名でないホテルは好みません。
+KOR: 제 집사람의 다음달 비행기 스케쥴이 좀 까다로운데요. 가장 경제적인 항공편들로
+알아봐주실 수 있나요? 매일 오전 9시부터 오후 5시까지 홍콩, 상해, 북경, 도쿄, 고베에서
+연속으로 회의에 참석해야 하거든요. 편리한 밤 비행기와 적절한 호텔을 알려주시겠습니까?
+집사람은 크고 잘 알려지지 않은 호텔은 별로 좋아하지 않습니다.
+SPA: Soy la secretaria del Sr. Martínez. El mes próximo tienen que ir a cinco ciudades distintas.
+¿Podrían ayudarme a organizar el viaje? Tiene una serie de reuniones, entre 9 de la mañana y 5 de la
+tarde, en París, Brujas, Ginebra, Roma y Hamburgo, en días consecutivos. ¿Qué vuelos podría coger
+por la tarde? ¿Y qué alojamiento sería mejor? Al Sr.Martínez no le gustan las grandes cadenas de
+hoteles. Preferiría un hotel con ambiente familiar.
+SRP: Moja žena ima komplikovan raspored letenja sledećeg meseca. Da li biste mogli da me
+posavetujete u vezi sa najpovoljnijim rasporedom? Ima sastanke od devet ujutru do pet popodne, u
+Parizu, Brugesu, Frankfurtu, Rimu i Hamburgu, dan za danom. Da li biste mogli da mi predložite
+večernje letove koji bi joj odgovarali i odgovarajući smeštaj? Ne do pa da ju joj se ve li ki, o bični
+hoteli.
+THA: ภรรยายของผมมีตารางบินที่ซับซ้อนในเดือนหน้า ช่วยกรุณาแนะนาและจัดเที่ยวบินราคาประหยัดให้ได้ไหมครับ ภรรยายของผมมีประชุมตั้งแต่
+9.00-17.00 น. ที่กรุงเทพฯ, เวียงจันทร์, พนมเปญ, ย่างกุ้ง และปีนัง ในวันถัดไป กรุณาจัดเที่ยวบินเวลากลางคืน และที่พักที่สะดวกและเหมาะสม
+ภรรยายของผมไม่ชอบโรงแรมขนาดใหญ่ที่ไม่เป็นที่รู้จัก
+TUR: Gelecek ay eşimin sabah 9’dan akşam 5’e kadar Paris’ten, Bruges’a, Bruges’dan Frankfurt’a,
+Frankfurt’tan Roma’ya ve son olarak Roma’dan Hamburg’a çok yoğun toplantıları var. Böyle bir
+program için uygun bir gece uçağı ve konaklama önerebilir misiniz? Eşim, çok büyük ve bildik
+olmayan hotellerden hoşlanmaz.
+VIE: Tháng tới vợ tôi sẽ đi dự hội thảo ở rất nhiều nước. Các cuộc hội thảo thường bắt đầu từ chín giờ
+sáng đến mười bảy giờ; kéo dài trong bốn ngày liên tiếp và được tổ chức ở các địa điểm khác nhau:
+đầu tiên ở Hà Nội; tiếp đó đến Ðà Nẵng; Nha Trang và cuối cùng là thành phố Hồ Chí Minh. Chị có
+thể tư vấn cho vợ tôi nên chọn khách sạn nào; chuyến bay tối nào được không? Cô ấy không thích các
+khách sạn lớn; cô ấy thích các khách sạn nhỏ; yên tĩnh.
+YUE: 我老婆下個月要飛幾個地方，你可唔可以幫我搵個最平嘅去法﹖佢要參加一連串嘅會議
+，連續幾日朝早九點開到下晝五點，分別係巴黎、布魯日、法蘭克福、羅馬同埋漢堡。唔該你
+幫我搵啲夜班機同埋合適嘅酒店資料俾我。我老婆唔鍾意啲大型連鎖酒店。
+Passage P1
+CAT: Volem demanar informació per organitzar el càtering per una reunió amb molts participants.
+Seria convenient que el menjar fos entregat a punt per consumir, a la mateixa sala de reunions. En
+aquesta sala no hi ha cap espai separat per servir el menjar. Havíem pensat en uns entrepans, embotits i
+formatges, i fruita. Hi ha algun tipus de descompte per institucions acadèmiques?
+CMN: 我们要为一个大型会议咨询订餐。我们想要食品送到会场，可以直接吃。那里没有房间
+可以存放食物。我们考虑选择三明治、肉、奶酪和水果。你们有针对学术机构的协议价吗？
+DEU: Haben Sie die Möglichkeit, ein Essen für eine große Gruppe auszurichten? Wir müssen es so
+angeliefert bekommen, daß es sofort verzehrt werden kann. Es gibt nämlich keine Möglichkeit, das
+Essen in einem separaten Raum anzurichten. Wir denken da an belegte Brote, verschiedene
+Fleischsorten, Käse und Obst. Geben Sie eigentlich Rabatt für akademische Einrichtungen?
+ENG: We are enquiring into possible catering arrangements for a large meeting. We would need to
+have the food delivered to the premises in a manner that would allow immediate consumption. There
+are no facilities for setting out the food in a separate room. We were thinking of a selection of
+sandwiches, meats, cheeses, and fruit. Do you have special corporate rates for academic institutions?
+EUS: Biltzar handi baterako catering aukerak aztertzen ari gara. Janaria aretoan bertan kontsumitzeko
+moduan bidaltzea behar genuke. Ez dago janaria banatzeko beste lekurik. Uste dugu egokiena
+ogitarteko, hestebete, gazta, eta fruta sorta bat izango dela. Baduzue erakunde akademikoentzako
+eskaintzarik?
+FIN: Kyselisimme sopivia ateriapalveluja isolle kokoukselle. Tarvitsisimme ruuan toimitettuna
+toimitiloihimme siten, että ateria voitaisiin nauttia heti. Meillä ei ole erillisiä ruuanlaittotiloja. Ajattelimme lajitelmia leipiä, lihaa, juustoja ja hedelmiä. Onko teillä erityisiä yrityshintoja kateemisille laitoksille?
+FRA: Nous nous renseignons sur les possibilités de restauration pour un grand meeting. Il faudrait que
+la nourriture soit livrée sur place de façon à ce qu'on puisse consommer tout de suite. Les locaux ne
+permettent pas de préparer la nourriture dans une pièce séparée. Nous pensions à un assortiment de
+sandwichs, viandes, fromages et fruits. Avez-vous des tarifs spéciaux pour les institutions
+académiques ?
+HUN: Fogadásszervezőt keresünk egy nagyszabású találkozóra. Oly módon kellene az ételt a
+helyszínre szállítani, hogy azonnal fogyasztható legyen. Nincs lehetőség arra, hogy külön teremben
+legyen feltálalva. Egy szendvicsekből, húsokból, sajtokból és gyümölcsből álló vegyes tálra
+gondolnánk. Van speciális egységes díjszabásuk egyetemi intézmények számára?
+ITA: Stiamo cercando una ditta di organizzazione convegni, per un grosso congresso. Abbiamo
+bisogno che il pranzo sia servito sul posto per evitare una interruzione dei lavori troppo lunga.
+Pensavamo a qualcosa tipo tramezzini e macedonie di frutta. Voi avete tariffe speciali per istituzioni
+accademiche?
+JPN: 会議用仕出しのデリバリーに関してお伺いします。料理を盛り付けるための別室を用意
+しておりませんので、出来合いの食事を届けていただく必要があるのですが可能でしょうか
+。サンドウィッチ，お肉料理，チーズ，果物からの選択を考えています。あと、教育機関向
+けの優遇価格がありますか。
+KOR: 저희는 큰 규모의 회의를 위한 출장요리업체를 찾고 있습니다. 즉시 먹을 수 있는 요리를
+구내로 배달해주셔야 합니다. 별도의 공간에서 음식을 조리할 수 있는 설비가 없거든요. 저희는
+샌드위치와 치킨, 간단한 떡과 과일 정도로 차리면 어떨까 생각하고 있습니다. 혹시 교육기관을
+위한 특별 할인 요금이 있습니까?
+SPA: Necesitamos información sobre el servicio de restauración para un congreso con muchos
+participantes. Querríamos que nos trajeran la comida ya preparada para poder comer en la misma sala
+de reuniones. No disponemos de un espacio aparte para servirla. Habíamos pensado en un surtido de
+bocadillos, embutidos, quesos y frutas. ¿Tienen precios especiales para grupos o para instituciones
+académicas?
+SRP: Skupljamo informacije o mogućoj organizaciji keteringa za jedan veliki skup. Morali biste da
+isporučite hranu tako da može odmah da se služi. Nemamo posebnu prostoriju gde bi hrana mogla da
+se aranžira i čuva. Imali smo na umu selekciju sendviča, suvog mesa, sireva i voća. Imate li specijalne
+cene za akademske ustanove?
+THA: เราขอสอบถามความเป็นไปได้เกี่ยวกับการจัดเลี้ยงส าหรับงานประชุมขนาดใหญ่ เราต้องการให้มีอาหารมาส่งที่สถานที่แบบพร้อมทานได้เลย
+เราไม่มีสิ่งอานวยความสะดวกส าหรับจัดเตรียมอาหารในห้องแยกออกมา เราคิดว่าอยากให้มีแซนวิช เนื้อสัตว์ เนยแข็งและผลไม้หลายๆ แบบให้เลือกทานได้
+คุณมีราคาพิเศษส าหรับสถานศึกษา หรือปล่าวค่ะ
+TUR: Büyük bir toplantı için yeme-içme servisi yapan şirketler arıyoruz. Ancak yiyecekler hemen
+servis yapılacak şekilde ayarlanmalı. Çünkü yiyecekleri hazırlamak için ayrı özel bir yer yok. Çeşitli
+sandviçler, köfte, peynir ve meyve olan bir açık büfe düşünüyoruz. Bu tür bildiğiniz bir şirket var mı?
+VIE: Chúng tôi đang tìm thông tin về tổ chức tiệc cho Hội nghị. Chúng tôi muốn tổ chức tập chung tại
+một địa điểm. Vì không đặt được phòng to để bày các bàn tiệc; nên có lẽ chúng tôi sẽ tổ chức tiệc
+đứng với bánh mỳ; thịt nguội; pho mát và hoa quả. Chị có bảng giá đặc biệt dành cho các cơ quan
+không? Trường Ðại học có được hưởng giá đặc biệt không?
+YUE: 我地要幫一個大型會議訂餐。要將食物直接送去會場，咁樣就可以係會場度食啦。我地
+無額外嘅房嚟放食物。所以我地考慮訂啲三文治、肉類、芝士同埋生果之類嘅食物。對於學院
+攪嘅學術性活動，你地會唔會有折頭架﹖
+Passage P2
+CAT: Envieu una ambulància al número setze del passatge de Sant Francesc, tan aviat com sigui
+possible. Un home major ha patinat, s’ha trencat una cama, i no és possible moure’l. L’únic camí per
+entrar al passatge és pel carrer de l’església, ja que l’avinguda del parc està tancada per obres.
+L’hospital Son Espases ja està avisat i esperen l’arribada del ferit.
+CMN: 快派个救护车到朝阳园16号。有个老人在冰上滑倒，腿摔断了，不能动。到这里只能经
+光华路，因为朝阳北路在修路，不通车。已经通知朝阳三医院了，只等人到了。
+DEU: Schicken Sie so schnell wie möglich einen Krankenwagen in die Großgarage in der
+Hopfengasse. Ein alter Mann ist auf dem Eis ausgerutscht. Er hat sich das Bein gebrochen und kann
+nicht bewegt werden. Denken Sie an die Sperrung der Jachtstraße, sie ist wegen Straßenarbeiten
+gesperrt. Das städtische Krankenhaus ist bereits informiert, sie warten schon.
+ENG: Send an ambulance to sixteen Chadwick Close as soon as possible. An old man has slipped on
+the ice and broken his leg, and can't be moved. Access to the Close is via Church Street only. The Park
+Avenue approach has been closed for road repairs. Chester Grange Hospital has been informed, and
+awaits arrival.
+EUS: Bidali anbulantzia bat Errekalde 12ra, lehenbailehen. Agure batek irrist egin eta hanka hautsi du,
+eta ezin da mugitu. Bertara Elizalde Kaletik besterik ezin da sartu. Alderdi Ederreko sarbidea itxita
+dago bide-lanak direla eta. Ospitalari jakinarazi diogu eta zain daude.
+FIN: Lähettäkää ambulanssi Luhtatie kuuteentoista heti kun mahdollista. Vanha mies on liukastunut
+jäällä ja murtanut jalkansa, eikä häntä voida liikuttaa. Yhteys tielle on vain Puutien kautta.
+Metsäkadun yhteys on poikki tietöiden takia. Meilahden sairaalaa on informoitu, ja he odottavat
+kuljetuksen saapumista.
+FRA: Envoyez une ambulance au 16 boulevard Frot le plus vite possible. Un vieil homme a glissé sur
+la glace et s’est cassé la jambe. On ne peut pas le déplacer. L’accès au boulevard n’est possible que par
+la rue Mortier, l’avenue du Parc a été fermée pour travaux. L’hôpital la Timone a été prévenu et attend
+votre arrivée.
+HUN: Küldjenek egy mentőt a Haris közbe, amilyen gyorsan csak lehet. Egy idős férfi elcsúszott a
+jégen, és eltörte a lábát, és nem lehet megmozdítani. A közbe csak a Váci utcán keresztül lehet
+behajtani. A Petőfi Sándor utca felújítás miatt le van zárva. Már értesítették a Rókus kórházat, aki
+várja a beteg érkezését.
+ITA: Mandate un'ambulanza al sedici di Via Veneto il piu' presto possibile. Un signore anziano e'
+scivolato su una buccia di banana e si e' rotto una gamba, e non si puo' muovere. Passate dal Muro
+Torto perche' Piazza Barberini e' bloccata per lavori in corso. L'ospedale San Giacomo e' gia' stato
+avvertito e aspettano il suo arrivo.
+JPN: 救急車をお願いします。山田町16番地で、ご年配の男性が氷の上で滑って、足を骨折し
+、動けない状態です。尚、国道一号線は道路工事のため通行止めとなっておりますので現場
+へは新橋経由でお願いします。阪大付属病院には既に連絡がいっており、患者さんを待ち受
+けているとのことです。
+KOR: 사당동 16번지로 구급차 한 대를 최대한 빨리 보내주십시오. 어르신 한 분이 빙판에서
+미끌어져 다리가 부러져서 움직이지 못하십니다. 사거리로의 진입은 이수교를 통해서만
+가능하고, 도로 공사때문에 방배역에서 진입하는 길은 현재 폐쇄되었습니다. 서울성모병원에
+연락이 닿아 환자의 후송을 기다리고 있습니다.
+SPA: Envíen una ambulancia al número dieciséis del Pasaje de la Concepción lo más rápido que
+puedan. Un anciano ha resbalado, se ha roto la pierna y no se puede mover. Al Pasaje sólo se puede
+llegar por la calle de la Iglesia. La entrada por la Avenida del Parque está cerrada por obras. Ya hemos
+avisado al Hospital General y esperan al herido.
+SRP: Pošaljite hitnu pomoć u Miloševu šestnaest što pre. Jedan stariji čovek se okliznuo na led i
+polomio nogu, i nepokretan je. Miloševoj možete da pristupite samo iz Ljubine. Njegoševa je
+zatvorena zbog radova. Obavestili smo Glavnu bolnicu, tako da očekuju vaš dolazak.
+THA: ช่วยส่งรถพยาบาลมาที่บ้านเลขที่ 16 สาธร ด่วน มีคนแก่เพศชายลื่นน ้าล้มขาหักและตอนนี้ขยับไม่ได้ ถนนสีลม ทางเข้าหลัก สาธร ปิดซ่อนแซม
+รถพยาบานต้องเข้ามาทางโบสถ์ เซ็นหลุยส์เท่านั้น โรงพยาบาลเซ็นหลุยส์รับเรื่องแล้วและกาลังรอรถพยาบาลมาส่งผู้ป่วยอยู่
+TUR: Baraj Yolu 5.5 durağa çok acil bir ambulans gönderebilir misiniz? Yaşlı bir adam suda kaydı ve
+bacağı kırıldı. Şu anda hareket edemiyor. Ancak hastaneler kavşağından geçen yol, altyapı
+çalışmasından dolayı kapalı. Aradaki yoldan giriş yapabilirsiniz. Biz Balcalı Hastanesine haber verdik,
+sizin gelişinizi bekliyorlar.
+VIE: Xin điều khẩn cấp một xe cứu thương đến số nhà 16; ngõ Phan Chu Trinh. Có một ông già bị
+trượt chân và ngã bên lề đường; ông ấy không thể cử động được chân. Có thể ông ấy đã bị gẫy chân.
+Các anh nên đi đường Trần Hưng Ðạo; đường Phan Chu Trinh đang bị cấm. Chúng tôi đã báo cho
+phòng cấp cứu bệnh viện Bạch Mai; nhân viên trực cấp cứu đang chờ ở đó.
+YUE: 唔該即刻派部救護車去砵蘭街300號啊。有位老人家因為地面濕滑跌到，隻腳斷咗，郁唔
+到。因為上海街整路封咗，救護車一定要行彌敦道。我地已經通知咗伊利沙伯醫院，佢地已經
+做好準備啦。
+Passage P3
+CAT: Si us plau, voldria encarregar un lot de productes de nadal. M’agradaria que fos una cistella amb
+una dotzena de paquets de torró, cinc caixes de massapans i tres o quatre paquets de fruites confitades.
+L’adreça d’enviament és al carrer Joan Miralles, número 25. Ho podran entregar abans del dia 23 de
+desembre, sens falta? A més, no vull que consti el nom de qui ha fet l’encàrrec, ja que és una sorpresa.
+CMN: 请接圣诞节订货部。我想订10盒圣诞薄饼，5盒混合饼干，还有三个大圣诞蛋糕。收件地
+址是西城二龙路16号，王大雷医生家。你们能保证12月23号之前送到吗？请帮订货人保密，谢
+谢。
+DEU: Geben Sie mir bitte ihre Weihnachtsabteilung. Ich brauche vierundzwanzig Kisten
+Weihnachtsgebäck, fünf Schachteln gemischtes Gebäck und drei große Stollen. Die
+Anlieferungsadresse ist Apfelweg dreiundvierzig in Bielefeld. Können Sie mir garantieren, daß alles
+am dreiundzwanzigsten Dezember ankommt? Ich wäre Ihnen dankbar, wenn Sie mir eine Bestätigung
+dieses Auftrags schicken würden.
+ENG: Christmas order department please. I wish to place an order for ten boxes of Christmas crackers,
+five boxes of mixed biscuits, and three large Christmas cakes. The address for delivery is Dr Barnado's
+Home, 16 Treasure Island Road. Can you guarantee delivery by 23rd December? I should be grateful
+if you would not disclose who placed the order.
+EUS: Gabonetako eskarien departamenduarekin, mesedez. Hamar turroi, bost polboroi kaxa, eta hiru
+euskal pastel eskatu nahi nituzke. Mikel Elosuren etxerako da: Aroztegieta kalea 16. Abenduaren 23an
+iristea bermatu dezakezue? Eskertuko nizueke bidalketak nork egin duen esango ez bazeniote.
+FIN: Joulutoimitusten osasto, kiitos. Haluaisin tilata kymmenen laatikkoa joulupipareita, viisi
+laatikkoa suklaakonvehteja ja kolme suurta hedelmäkuivakakkua. Toimitusosoite on Herra Viitasen
+koti, Kanervakatu 16. Voitteko taata toimituksen 23 joulukuuta mennessä? Toivoisin, että ette
+paljastaisi tilaajan nimeä.
+FRA: Le département des commandes de Noël s’il vous plaît. J’aimerais commander dix boîtes de
+biscuits de Noël, cinq boîtes de biscuits variés, et trois grandes bûches de Noël. L’adresse de livraison
+est chez le Dr. Barnado, 16 route de l'Isle d'Abeau. Pouvez-vous garantir la livraison le 23 décembre
+au plus tard ? Je vous serais reconnaissant de ne pas indiquer le nom de la personne ayant passé la
+commande.
+HUN: A karácsonyi rendelés-felvételi szolgálatot kérem. 10 doboz karácsonyi szaloncukrot, 5 doboz
+vegyes süteményt és 3 nagy karácsonyi tortát szeretnék rendelni. A szállítási cím Dr. Méhes Ottó,
+Kecskeméti utca 31. Tudják biztosítani a szállítást december 23-ára? Megkérném Önöket, hogy ne
+árulják el, ki adta le a rendelést.
+ITA: E' la pasticceria Colombo? Vorrei ordinare dieci panettoni, cinque etti di pasticcini misti e
+cinquanta babbo natale di cioccolata. L'indirizzo dove consegnare e': dottor Mario Rossi, Largo
+Argentina 29. Mi assicura che consegnerete il 23 dicembre? Vi sarei grato se non rivelaste il mio
+nome.
+JPN: もしもし、クリスマスギフトセンターをお願いします。クリスマス・クラッカーを10箱
+、クッキーの詰め合わせを5箱、Lサイズのクリスマスケーキを3台注文したいのですが。配
+達先は恵比寿通り16番地の小池先生のお宅です。12月23日までに配達していただけますか。
+あと、誰が注文したのか内緒にしておきたいのですが。
+KOR: 설날 선물 접수 센터 부탁합니다. 한과 10상자와 모듬 떡 5세트, 육포 선물세트 3상자를
+주문하려고 하는데요. 배달해주실 주소는 서대문구 연희동 16번지 오명진 선생님 댁입니다. 설
+전날까지 배달해주실 수 있나요? 선물 보내는 사람의 이름을 별도로 기재하지 않으시면
+감사하겠습니다.
+SPA: Por favor, quisiera encargar un lote de Navidad. Quiero una cesta con diez tabletas de turrones
+variados, cinco cajas pequeñas de polvorones y tres de mazapanes. Tienen que enviarlo a la casa del
+doctor Ruiz, en la calle de Alcalá, número 16. ¿Lo podrían entregar el 23 de diciembre sin falta? Pero
+no digan quién hizo el pedido, es una sorpresa.
+SRP: Molim vas odeljenje za novogodišnje porudžbine, želim da poručim deset kutija novogodišnjih
+kolača, pet kutija mešanog keksa i tri velike novogodišnje torte. Mesto isporuke je kuća doktora Tome,
+Blagoja Parovića šesnaest. Možete li da garantujete isporuku do dvadeset i trećeg decembra? Bio bih
+vam zahvalan ako biste držali u tajnosti ime poručioca.
+THA: กรุณาต่อฝ่ายสั่งของคริสมาสต์ค่ะ ฉันอยากจะสั่งขนมปังกรอบวันคริสมาสต์สิบกล่อง บิสกิตรวมรสห้ากล่อง เค้กวันคริสมาสต์ขนาดใหญ่สามก้อน
+กรุณาส่งไปที่บ้านด๊อกเตอร์ภาณุ บ้านเลขที่ 16 ถนน มหาสมบัติ รับประกันได้หรือไม่ว่าจะมาส่งก่อนวันที่ 23 ธันวาคม
+และเวลาส่งของเหล่านี้กรุณาอย่าบอกชื่อผู้สั่งนะค่ะ
+TUR: Yılbaşı siparişleri ile ilgilenen birimi bağlar mısınız, lütfen? Yeni yıl akşamı için karışık taze
+meyve, biraz karışık çerez ve içecek bir şeyler sipariş vermek istiyorum. Ancak siparişin mutlaka 30
+Aralık akşamı, Cemalpaşa mahallesi, 16 no’lu adrese teslim edilmesi lazım. Kesinlikle bu tarihte
+teslim edilmiş olacağını garanti eder misiniz? Siparişi gönderenin adının gizli kalmasını istiyorum. Bu
+bir sürpriz olacak.
+VIE: Có phải tiệm bánh Hồng Ngọc đấy không ạ? Tôi là Chi đây. Tôi muốn nhờ nhà hàng chuyển quà
+tết trung thu cho bạn tôi. Tôi muốn chuyển một cân hoa quả sấy khô; năm hộp bánh trung thu và ba
+hộp bánh mặn đến nhà Bà Bác sỹ Mai; ở số nhà hai trăm bốn nhăm; đường Hoàng Hoa Thám; tối ngày
+ba mươi tháng chín. Tôi muốn gây bất ngờ cho Bà Mai vì thế anh đừng cho bà ấy biết là tôi chuyển
+món quà này.
+YUE: 唔該駁去聖誕商品訂貨部啊。我要訂十盒聖誕糖果、五盒雜錦餅乾、三個聖誕大蛋糕。
+地址係加連威老道十六號，李醫生屋企。你地可唔可以保證係23號之前一定送到﹖同埋希望你
+地唔好話係邊個送嘅。
+Passage P8
+CAT: Ahir vespre vaig obrir la porta perquè el gat sortís. Feia molt bona temperatura i vaig sortir al
+jardí a prendre una mica l’aire. Tot seguit, vaig sentir el soroll de la porta tancant-se darrere meu i em
+vaig donar compte que m’havia quedat tancat a fora de casa. Per acabar-ho d’adobar, la policia em va
+detenir mentre provava de forçar el pany per tornar a entrar!
+CMN: 昨天晚上，我打开前门，把猫放出去。夜景真好，我走到花园，呼吸新鲜空气。然后，
+我听到身后，门咣的一声就关上了。我意识到把自己锁到门外了。最倒霉的还在后面，我试着
+撬门，结果被警察逮捕了。
+DEU: Letzte Nacht habe ich die Haustür geöffnet, um die Katze nach draußen zu lassen. Es war ein so
+schöner Abend, daß ich in den Garten ging, um etwas frische Luft zu schöpfen. Plötzlich hörte ich, wie
+die Tür hinter mir zufiel. Ich hatte mich selbst ausgesperrt. Und dann wurde ich auch noch verhaftet,
+als ich versuchte, die Tür aufzubrechen.
+ENG: Last night I opened the front door to let the cat out. It was such a beautiful evening that I
+wandered down the garden for a breath of fresh air. Then I heard a click as the door closed behind me.
+I realised I'd locked myself out. To cap it all, I was arrested while I was trying to force the door open!
+EUS: Bart lorategiko atea ireki nuen katua ateratzeko. Hain gau-giro ederra zegoen, paseotxo bat eman
+eta haize freskoa hartu nahi izan nuen. Orduan, klik bat entzun nuen, atzean atea itxi zitzaidalarik.
+Kanpoan nintzen, sartu ezinik. Eta, dena ondo amaitzeko, atxilotu egin ninduten atea bortxaz irekitzen
+saiatzeagatik!
+FIN: Avasin viime yönä etuoven päästääkseni kissan ulos. Koska oli niin hieno ilta, kävelin
+puutarhaan haukatakseni vähän raitista ilmaa. Sitten kuulin naksahduksen, kun ovi sulkeutui takanani.
+Tajusin lukinneeni itseni ulos. Kaiken lisäksi minut pidätettiin, kun yritin murtaa oven auki!
+FRA: La nuit dernière j’ai ouvert la porte d’entrée pour laisser sortir le chat. La soirée était si belle que
+je suis descendu dans le jardin pour prendre un bol d’air frais. Puis j’ai entendu le clic de la porte qui
+se refermait derrière moi et j’ai compris que je m’étais enfermé dehors. Pour couronner le tout, j’ai été
+arrêté alors que j’essayais de forcer la porte !
+HUN: Tegnap este kinyitottam a bejárati ajtót, hogy kiengedjem a macskát. Olyan szép este volt, hogy
+lesétáltam a kertbe egy kis friss levegőt szívni. Aztán hallottam egy kattanást, ahogy az ajtó
+becsukódott mögöttem. Rájöttem, hogy kizártam magam. Ráadásul még le is tartóztattak, amikor
+megpróbáltam felfeszíteni az ajtót.
+ITA: Ieri sera ho aperto la porta per far uscire il gatto. Era una serata bellissima e mi veniva voglia di
+starmene sdraiato fuori al fresco. All'improvviso ho sentito un clic dietro di me e ho realizzato che la
+porta si era chiusa lasciandomi fuori. Per concludere, mi hanno arrestato mentre cercavo di forzare la
+porta!
+JPN: 昨夜、猫を外に出してやろうと玄関を開けたら、とても気持のいい夜だった。新鮮な空
+気を吸おうと、僕も庭へ出てみると、背後でドアの閉まるカチッと言う音が聞こえ、締め出
+されてしまった。挙句の果てに、ドアをこじ開けようとしているところを逮捕されてしまっ
+た。
+KOR: 어젯밤에 고양이를 밖으로 내보내려고 현관문을 열어놓았어요. 저녁이 너무나
+아름다워서 상쾌한 공기를 마시며 정원을 천천히 거닐었죠. 그러다가 문 닫히는 소리가 나서
+돌아봤더니 열쇠도 없이 문이 잠겨버리고 말았어요. 설상가상으로, 억지로 문을 열려고 하다가
+경찰에 체포되었죠.
+SPA: Anoche, abrí la puerta del jardín para sacar al gato. Hacía una noche tan buena que pensé en dar
+un paseo y respirar el aire fresco. De repente, se me cerró la puerta. Me quedé en la calle, sin llaves.
+Para rematarlo, me arrestaron cuando trataba de forzar la puerta para entrar.
+SRP: Sinoć sam otvorio vrata da pustim mačku napolje. Bilo je tako lepo veče, da sam izašao u baštu
+da udahnem svež vaduh. Tada sam začuo “klik” i video kako se vrata zatvaraju za mnom. Shvatio sam
+da sam ostao van kuće, a vrata su se zaključala. Ukratko, uhapsili su me dok sam pokušavao da
+otvorim vrata na silu!
+THA: เมื่อคืนก่อนฉันเปิดประตูหน้าบ้านเพื่อปล่อยแมวออกไปข้างนอก แต่พอเห็นว่าเย็นนั้นอากาศนอกบ้านดีมากฉันก็เลยเดินออกไปที่สวนเพื่อสูดอากาศ
+พอฉันได้ยินเสียงแกร๊กจากประตูจึงนึกได้ว่าประตูล๊อกและฉันติดอ ยู่นอกบ้านแล้วตารวจก็มาจับฉันตอนที่ฉันพยายามจะงัดประตูเปิด
+TUR: Dün akşam, kedim dışarıya çıkıp girebilsin diye ön kapıyı açık bıraktım. Hava o kadar güzeldi ki
+bende biraz hava almak için bahçeye çıktım. Sonra bir tıkırtı duydum ve arkamdan sokak kapısının
+kapandığını duydum. Kendi sokak kapımı açmak için uğraşırken tutuklandım.
+VIE: Tối qua; tôi đã mở cửa cho con mèo ra ngoài. Vì trời rất đẹp; không khí thoáng đãng nên tôi
+quyết định đi dạo một chút. Mới chỉ bước được vài bước tôi nghe thấy tiếng cửa ra vào đóng sập lại
+đằng sau. Tôi nhận ra là mình đã bị nhốt ở ngoài. Ðiều làm tôi bực mình là tôi đã bị bắt giữ khi đang
+cố gắng mở cửa để vào nhà!
+YUE: 琴晚我打開前門，將隻貓放出去，睇到夜色好靚，就落樓梯，想去花園度呼吸一下新鮮
+空氣。當時淨係聽到身後bing bang一聲，發現自己被反鎖o係門外。更加慘嘅係，當我嘗試撬
+開門嗰陣被警察拉咗。
+Passage P9
+CAT: Sempre m’ha costat dormir durant els trajectes en tren. Per alguna raó, mai acabo de trobar-me
+còmode a la butaca, i a més, els altres passatgers acostumen a parlar fort o fins i tot a roncar. Per altra
+banda, hi ha el soroll permanent de les rodes del tren i les vies. Si així i tot aconsegueixo fer una
+becaina, passa el revisor i em desperta per demanar-me el bitllet.
+CMN: 我发现在英国的长途火车上睡觉太难了。一方面，那座位一点都不舒服。还有其他乘客
+大声讲话。最烦人的是，还有人打鼾。再有就是车轮撞铁轨的声音。好不容易眯着了，又被查
+票的叫醒了。
+DEU: Ich kann auf langen Schiffsreisen einfach nicht schlafen. Dazu sind die Sitze viel zu
+ungemütlich. Außerdem sprechen die anderen Passagiere zu laut oder, was noch schlimmer ist, sie
+schnarchen. Dazu kommt das ewige Stampfen der Maschinen. Wenn ich trotzdem gerade dabei bin
+einzudösen, kommt irgendeine Durchsage, und ich werde wieder wach.
+ENG: I've always found it difficult to sleep on long train journeys in Britain. For one thing, I can never
+make myself comfortable in the seat. Then the other passengers usually talk so loudly, or worse still
+they snore. In addition, there's the constant clickety-click of the wheels on the track. If I do manage to
+doze off the ticket inspector comes along and wakes me.
+EUS: Beti gertatu zait zaila tren-bidaia luzeetan lo egitea. Hasteko, inoiz ez naiz eroso egon
+eserlekuan. Beste bidaiariek goregi hitz egin ohi dute, edo, okerrago, zurrunga egin. Horrez gain,
+gurpilen etengabeko triki-traka. Eta lokartzea lortu arren, laster datorkit ikuskatzailea txartel eske.
+FIN: Minulla on aina ollut vaikeuksia nukkua pitkillä junamatkoilla Suomessa. Ensinnäkin, en löydä
+sopivaa asentoa penkissä. Muut matkustajat myös usein puhuvat kovalla äänella tai, vielä pahempaa,
+kuorsaavat. Lisäksi kiskoista kuuluu jatkuva kolina. Ja jos onnistunkin nukahtamaan, niin
+lipuntarkastaja tulee herättämään minut.
+FRA: J’ai toujours trouvé difficile de dormir pendant les longs trajets en train en Europe. D’abord, je
+n’arrive jamais à me mettre à l’aise dans le siège. Ensuite, les autres passagers parlent généralement
+trop fort ou, pire encore, ils ronflent. En plus, il y a le cliquetis constant des roues sur la voie. Et quand
+j’arrive à m’assoupir, le contrôleur arrive et me réveille.
+HUN: Mindig is nehézkesnek találtam az alvást a hosszú vonatutak alatt. Először is, soha nem tudok
+kényelmesen elhelyezkedni az ülésen. Aztán a többi utas általában nagyon hangosan beszélget vagy,
+ami még rosszabb, horkol. Ezen kívül a kerekek egyfolytában kattognak a síneken. Ha véletlenül
+mégis sikerül elszundítanom, akkor meg a kalauz jön és felébreszt.
+ITA: Ho sempre trovato difficile dormire in treno. Prima di tutto non riesco a dormire seduta. Poi gli
+altri passeggeri parlano forte o peggio ancora russano. Inoltre c'e' un costante ticchettio di ruote nel
+vagone. Quando poi sto per assopirmi arriva il controllore a chiedermi il biglietto.
+JPN: 日本の長距離列車の旅で、うまく眠れたためしがない。まず，座席で快適な姿勢をとる
+ことが難しいからだ。そして，他の乗客が大声で話したり、更に悪いことに、いびきをかい
+たりする。そのうえ、列車が絶えずガタンゴトンと音をたてる。ようやくウトウトしかけた
+頃に車掌が検札に来て起こされる。
+KOR: 한국에서 장거리 기차여행 중에 잠을 자는 것은 제게 어려운 일이에요. 우선은 기차
+좌석이 불편하거든요. 그리고 다른 승객들이 너무 크게 떠들어대거나 심지어는 코를 골기도
+해요. 게다가 철로를 달리는 기차 바퀴의 끊임없는 덜커덩덜커덩 거리는 소리도 한 몫하죠.
+겨우 잠이 들었다 싶으면 검표원이 와서 깨우더군요.
+SPA: Siempre me ha costado dormir en los trenes de largo recorrido. Primero, que no consigo sentirme
+cómodo en el asiento. Luego, que los demás pasajeros suelen hablar muy alto o, lo que es aún peor,
+roncan. Además, está el constante traqueteo de las ruedas sobre el raíl. Y si consigo quedarme
+dormido, pasa el revisor y me despierta para pedir el billete.
+SRP: Oduvek mi je bilo teško da spavam tokom dugih putovanja vozom po Srbiji. Prvo, nikad ne
+mogu da se udobno smestim na sedištu. Onda ostali putnici najčešće pričaju jako glasno, ili, jos gore,
+hrču. Povrh svega, neprestano se čuje ono klopotanje točkova i šina. A kad uspem da zadremam,
+pojavi se kontrolor karata i probudi me.
+THA: ฉันพบว่าการที่ต้องนอนหลับบนรถไฟในเมืองไทยเวลาที่ต้องนั่งไปไหนไกลๆ เป็นเรื่องยากมาก เก้าอี้นั่งอึดอัดไปส าหรับฉัน
+ผู้โดยสารคนอื่นก็คุยกันเสียงดัง และกรนเสียงดังอีก และยังมีเสียงรถเข็นอีก ถ้าโชคดีฉันหลับได้ สักพักก็จะมีคนตรวจตั๋วมาปลุกอยู่ดี
+TUR: Türkiye’de uzun tren yolculuklarında uyumayı hep çok zor bulmuşumdur. Bunun nedenlerinden
+biri, koltukta kendimi hiçbir zaman rahat hissedemememdir. Diğeri ise, diğer yolcuların yüksek sesle
+konuşması hatta daha da kötüsü horlamasıdır. Buna ek olarak bir de trenin tekerleklerinin çıkardığı o
+gıcırtılı ses var. Tam biraz dalar gibi olurum ki bilet kontrolü başlar.
+VIE: Tôi không tài nào ngủ được mỗi khi đi tàu. Ðầu tiên là tôi không thể tìm thấy một chỗ ngồi thoải
+mái; tiếp đó là vì những người bên cạnh: người thì nói quá to; người thì ngáy; hơn nữa tàu chạy quá
+ầm. Ðền lúc tôi chợp được mắt thì người soát vé xuất hiện và kiểm tra vé!
+YUE: 我一直覺得好難喺英國嘅長途火車上面瞓個好覺。原因之一係個位唔舒服，其次係啲乘
+客一直好大聲咁傾計，更慘嘅係有人打鼻鼾，仲有車輪碰撞鐵軌時發出嘅吱吱聲。再唔係就係
+我啱啱瞓著，就會有人來嚟查飛叫醒我。
+Passage Q0
+CAT: Disculpes per no venir a sopar el cap de setmana. M’hagués agradat molt tornar-te a veure. Per
+desgràcia vaig tenir un petit accident just quan em preparava per venir. Va ser quan vaig baixar al
+celler a recollir una botella de vi: no vaig encendre el llum perquè pensava que no era necessari i, per
+això, em vaig entrebancar a les fosques amb un escaló que es mou, i amb la caiguda em vaig trencar el
+turmell.
+CMN: 上个周末没能到你家里聚餐，真对不起。我真的想去看你。倒霉的是，我正要出发时出
+了点事。当时我是要去地下室拿瓶葡萄酒，偷懒没开灯，在黑暗中踩空了，把脚踝扭了。
+DEU: Es tut mir wirklich leid, daß ich am Wochenende nicht zum Essen kommen konnte. Ich wollte
+dich so gern mal wieder sehen. Aber kurz bevor ich losfahren wollte, hatte ich einen kleinen Unfall.
+Als ich in meinen Keller gegangen bin, um eine Flasche Apfelwein zu holen, habe ich vergessen, das
+Licht anzumachen. Im Dunkeln bin ich dann über eine lose Stufe gestolpert und habe mir den Knöchel
+gebrochen.
+ENG: Sorry I didn't come to dinner at the weekend. I was really looking forward to seeing you again.
+Unfortunately I had a small accident just as I was getting ready to leave. It was when I went down to
+fetch a bottle of wine from the cellar. I didn't bother to switch the light on, tripped on a loose step in
+the dark, and broke my ankle.
+EUS: Barka, ezingo dut asteburuan zuekin afaldu. Zuek ikusteko irrikaz nengoen, baina zoritxarrez
+ezbehartxo bat izan nuen etxetik irteteko prestatzen ari nintzela. Sotora jaitsi nintzen ardo botila bat
+hartzeko asmoz. Ez nuen argia piztu nahi izan eta ilunpetan estropezu egin nuen lauza solte batekin,
+eta orkatila hautsi.
+FIN: Anteeksi että en päässyt illalliselle viikonloppuna. Odotin kovasti näkeväni sinut taas, mutta
+valitettavasti minulle kävi pieni onnettomuus, kun olin lähtemässä liikkeelle. Se tapahtui kun menin
+hakemaan viinipulloa kellarista. En vaivautunut laittamaan valoja päälle ja kompastuin irtonaiseen
+askelmaan pimeässä ja mursin nilkkani.
+FRA: Désolé de ne pas être venu au dîner ce week-end. Je me réjouissais vraiment de te revoir.
+Malheureusement, j’ai eu un petit accident juste au moment de partir. C’est arrivé quand je suis
+descendu à la cave chercher une bouteille de vin. Je n’ai pas pris la peine d’allumer la lumière, j’ai
+trébuché sur une marche bancale dans le noir, et je me suis cassé la cheville.
+HUN: Elnézést, hogy nem jöttem a hétvégi vacsorára. Pedig tényleg vártam már, hogy újra
+találkozzunk. Sajnos történt egy apró baleset, épp amikor indulni készülődtem. Akkor történt, amikor
+lementem a pincébe egy üveg borért. Lusta voltam felkapcsolni a villanyt, megbotlottam a sötétben
+egy kilazult lépcsőfokban, és eltörtem a bokám.
+ITA: Scusatemi per non essere venuto alla vostra cena questo fine settimana. Ma sfortunatamente ho
+avuto un piccolo incidente quando stavo per uscire. Proprio mentre cercavo di prendere una bottiglia di
+vino dalla cantina. Non ho pensato di accendere la luce e ho inciampato in un gradino rompendomi
+una caviglia.
+JPN: 先週末の夕食会に伺えず、申し訳ありませんでした。皆様にお会いできるのを本当に楽
+しみにしておりましたのに。あいにく，出掛けにちょっとしたアクシデントに見舞われてし
+まったものですから。地下室へワインを取りに行く際に，明かりをつけずに降りたら、暗闇
+で階段を一段踏み外し足首を骨折してしまったのです。
+KOR: 지난 주말 저녁 약속에 가지 못해서 죄송해요. 만나뵙기를 정말 학수고대하고 있었는데,
+집에서 나가려고 준비하던 중에 작은 사고가 있었어요. 지하실에서 와인 한 병을 가져오려고
+내려갔을 때였죠. 급하게 불도 켜지 않고 가다가 어둠 속에서 발을 헛디뎌서 발목을 다치고
+말았어요.
+SPA: Lo siento, pero no voy a poder cenar con vosotros esta noche. ¡Tenía tantas ganas de volver a
+veros! Por desgracia, he tenido un pequeño accidente cuando me estaba preparando para salir. Bajé a
+la bodega a buscar una botella de vino. Con las prisas, no encendí la luz. Tropecé en la oscuridad con
+un escalón que tenía una baldosa suelta y me he roto el tobillo.
+SRP: Izvini što nisam došao na večeru za vikend. Zaista sam se radovao što ćemo se opet videti.
+Nažalost, imao sam malu nezgodu baš kad sam se spremao da krenem. Sišao sam u podrum da uzmem
+flašu vina, i pošto me je mrzelo da upalim svetlo, u mraku se sapletem na klimav stepenik i polomim
+članak.
+THA: ขอโทษด้วยที่ไม่ได้มาทานมื้อเย็นเมื่อสุดสัปดาห์ที่แล้ว ฉันอยากมาเจอคุณอีกครั้งจริงๆ
+แต่โชคไม่ดีมีอุบัติเหตุนิดหน่อยตอนที่กาลังจะออกจากบ้านมาหาคุณ ฉันรีบเดินไปหยิบไวน์จากห้องใต้ดินโดยที่ไม่ได้เปิดไฟ แล้วพลาดตกบันไดข้อเท้าหัก
+TUR: Hafta sonu akşam yemeğine gelemediğim için üzgünüm. Sizi tekrar görmeyi dört gözle
+bekliyordum. Ancak tam yola çıkmaya hazırlanırken, küçük bir kaza geçirdim. Yanıma içecek bir
+şeyler almak için kilere inmiştim. Işığı yakmaya gerek yok diye düşündüm. Karanlıkta ayağım takıldı
+ve ayak bileğim kırıldı.
+VIE: Tôi rất tiếc là không thể đến ăn tối tại nhà anh hôm chủ nhật tuần trước được. Tôi đã rất vui khi
+gặp lại anh. Hôm đấy; tôi đã gặp một tai nạn nhỏ khi đi xuống hầm rượu để lấy rượu. Vì không bật đèn
+nên tôi đã bước hụt và bị trẹo chân.
+YUE: 上個星期去唔到你屋企食晚飯，真係唔好意思啊。我真係好想再見到你架。可惜嘅係，
+就係我岩岩要出門口嘅時候，出左啲小意外。當時我落緊去地下室拎支葡萄酒，一時貪快無開
+燈，結果，係漆黑中一腳踩空，跌傷左腳踭。
+Passage Q1
+CAT: En aquell turó hi ha una drecera cap a casa meva. Alguns veïns diuen que el turó està embruixat,
+de fet, a ningú li fa gràcia passar per aquella zona quan s’ha fet fosc. És clar, jo no em crec aquestes
+supersticions, i de fet, m’agrada passar per aquella ruta ja que la trobo molt pintoresca.
+CMN: 到我家有条翻山的小路。有的本地人说山上有鬼。天黑以后就没有人敢从那走。当然，
+我是不相信这些迷信的东西。我就是这条风景如画的路。
+DEU: Von hier aus gibt es zu meinem Haus auch eine Abkürzung über den Hügel. Die meisten Leute
+erzählen, daß es dort spukt. Im Dunklen würde keiner von ihnen da lang gehen. Natürlich glaube ich
+nicht an so einen übernatürlichen Blödsinn. Ich gehe aber trotzdem lieber den schönen Weg um den
+Hügel herum, auch wenn es ein bißchen länger dauert.
+ENG: There's a short cut over that hill to my house. Some local people say the hill is haunted. No-one
+likes to pass through those fields after dark. Of course, I don't believe in any of that superstitious
+nonsense. I just like the picturesque route through the estate.
+EUS: Bada bidezidor bat muino hartatik nire etxeraino. Herriko batzuek diote muinoa sorginduta
+dagoela. Inork ez du hortik igaro nahi gauez. Jakina, nik ez dut horrelako zentzugabekeriarik sinesten.
+Gogoko dut hango bide bitxi hura.
+FIN: Tuon mäen yli on oikotie kotiini. Joidenkin paikallisten mukaan mäellä kummittelee. Kukaan ei
+halua mennä noiden peltojen läpi pimeällä. Minä en tietenkään usko mitään tuollaista taikauskoista
+hölynpölyä. Se on vain viehättävä reitti maatilan läpi.
+FRA: Il y a un raccourci par cette colline jusqu’à chez moi. Des gens du coin disent qu’elle est hantée.
+Personne n’aime traverser ces champs la nuit tombée. Bien sûr, je ne crois pas à ces bêtises
+superstitieuses. C’est juste que j’aime la promenade pittoresque à travers la propriété.
+HUN: Egy kis ösvény vezet a dombon keresztül a házamig. A helybéliek azt mondják, hogy a dombot
+kísértetek lakják. Senki nem szeret keresztülmenni azokon a mezőkön sötétedés után. Természetesen
+nem hiszek semmi ilyen babonás szamárságban. Csak szeretem a birtokon keresztül vezető festői
+szépségű utat.
+ITA: C'e' una scorciatoia in collina per arrivare alla mia casa. Alcune persone del luogo dicono che la
+collina e' abitata dai fantasmi. Nessuno passa di la' dopo il tramonto. Naturalmente io non credo a
+queste stupide superstizioni. Mi piace molto la strada pittoresca che attraversa la mia tenuta.
+JPN: わが家へ至る近道があるんです。その道はあの丘を越えて行くもので、地元の人たちは
+「幽霊の出る丘」と呼び、暗くなると誰もその道を通りたがりません。もちろん、私はその
+ような迷信は信じていません。うちの所有地を通るその道は、絵画のようで本当に美しいん
+ですよ。
+KOR: 저 언덕 너머에 우리 집으로 가는 지름길이 있어요. 동네 사람들 몇몇은 그 언덕에서
+귀신이 나온다고 하죠. 그래서 어두워지고 나면 아무도 그 곳을 지나가려하지 않아요. 전 그런
+말도 안되는 미신 따위는 당연히 믿지 않아요. 전 단지 그 곳을 지나갈 때 보이는 그림같은
+풍경을 좋아할 뿐이에요.
+SPA: A mi casa se puede ir por un atajo cruzando el bosque. Los vecinos dicen que el bosque está
+embrujado. Nadie quiere pasar por allí cuando oscurece. Yo, por supuesto, no soy supersticioso. A mí
+me encanta ir por ese camino tan pintoresco.
+SRP: Ima jedna prečica preko tog brda do moje kuće. Neki lokalci kažu da na brdu ima duhova. Niko
+ne voli da prelazi preko tih polja kad padne mrak. Naravno, uopšte ne verujem u ta glupa sujeverja.
+Jednostavno uživam u šetnji slikovitim pejzažem preko imanja.
+THA: มีทางลัดข้ามเขามาที่บ้านฉัน คนแถวนี้บอกว่าทางลัดมีผีคอยหลอกหลอนอยู่ และไม่มีใครกล้าเดินผ่านทางนี้ตอนกลางคืน แต่ฉันก็ไม่เชื่อเรื่องพวกนี้
+ฉันแค่ชอบที่จะใช้เส้นทางสวยๆ น่าเดิน
+TUR: Evime giden yol üzerinde kestirme bir patika var. O civardakiler bu yolun büyülü olduğunu
+söylüyorlar. Hava karardıktan sonra bu yoldan geçmeyi kimse sevmez. Bu tür batıl inançları hep
+saçma bulmuşumdur. Ben bu manzaralı yoldan yürümeyi çok seviyorum.
+VIE: Ðể đến nhà tôi; anh có thể đi đường tắt qua quả đồi. Người làng tôi không thích đi đường đấy vì
+họ cho rằng quả đồi có ma; nhất là vào ban đêm. Tôi không tin vào những lời đồn đại đó. Tôi lại rất
+thích đi đường đó vì nó rất thơ mộng.
+YUE: 經過嗰座山去我屋企會有一條捷徑，但係有啲當地人話嗰度成日鬧鬼。無人願意係天黑
+之後行嗰度。當然，我唔信呢啲鬼鬼怪怪嘅野啦。其實我真係好鍾意嗰條風景如畫嘅山路架。
