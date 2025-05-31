@@ -67,7 +67,7 @@ class MarkovModel:
         # Compute H(Y|X)
         for (prefix, next_token), joint_count in self.ngram_counts.items():
                 cond_prob = self.cond_probs[(prefix, next_token)]  # P(y|x)
-                if cond_prob > 0: 
+                if cond_prob > 0: # Omit non-ocurring pairs to avoid log2(0)
                     prefix_entropy[prefix] += cond_prob * (- log2(cond_prob)) # H(Y|X=x) = -Σ P(y|x) * log2(P(y|x))
 
 

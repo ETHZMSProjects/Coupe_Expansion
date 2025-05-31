@@ -1,13 +1,100 @@
 from math import log2
 import pandas as pd
 import warnings
+import os
 import re
 from pathlib import Path
-import numpy as np
 import panphon
 from panphon.segment import Segment
-import regex
 from segments.tokenizer import Tokenizer
+import subprocess
+import numpy as np
+import jieba
+import unicodedata
+import pandas as pd
+import regex as re
+import pycantonese
+from g2pk import G2p
+from pypinyin import Style, pinyin as pypinyin_fn
+
+
+# Regex for grapheme clusters
+GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
+
+def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
+    """
+    Cleans a given IPA string by removing non-phonemic characters,
+    while preserving delimiter and language-specific meaningful IPA symbols.
+    """
+
+    # General set of characters to strip (non-phonemic)
+    STRIP_CHARS = {
+        'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ',
+        '“', '”', '‘', '’', '《', '》', '【', '】', '（', '）', '(', ')', '[', ']', '{', '}', '§', '%',
+        '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
+        '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：',
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+    }
+
+    # Define language-specific meaningful symbols to preserve
+    LANG_KEEP_CHARS = {
+        "FRA": {"@", "°"},
+        "DEU": {"@", "ː", "°"},
+        "ENG": {"ː", "ˑ", "ˈ", "ˌ"},
+        "YUE": set("123456789"),
+        "VIE": set("123456789"),
+        "CMN": set("123456789"),
+        "JPN": {"ː", "Q", "N"},
+    }
+
+    print(f"Original IPA string: {ipa_string}")
+    
+    if isinstance(ipa_string, list):
+        ipa_string = " ".join(ipa_string)
+        
+    segments = GRAPHEME_RE.findall(ipa_string)
+    print(f"Segments before cleaning: {segments}")
+
+    # Preserve any characters in the delimiter
+    if isinstance(delimiter, str):
+        if delimiter.startswith("[") and delimiter.endswith("]"):
+            STRIP_CHARS -= set(delimiter[1:-1])
+        else:
+            STRIP_CHARS.discard(delimiter)
+
+    # Subtract meaningful language-specific symbols
+    STRIP_CHARS -= LANG_KEEP_CHARS.get(language.upper(), set())
+
+    # Clean the segments
+    cleaned_as_list = []
+    for seg in segments:
+        if seg in STRIP_CHARS:
+            continue
+        if any(unicodedata.category(char).startswith('S') for char in seg):  # Symbol characters
+            continue
+        cleaned_as_list.append(seg)
+
+    print(f"Cleaned: {cleaned_as_list}")
+    return "".join(cleaned_as_list) if as_string else cleaned_as_list
+
+
+def tokenize(word, processing_type, delimiter, clean, language):
+    """
+    Tokenizes a given word into syllables, ipa segments or phonemes. 
+    Assumes the input word is in IPA format with syllable or phoneme boundaries marked by a specific delimeter.
+    """
+    # e.g. word = 'tʃɪ_nə_ɛ̃wɑː_r_ɪŋ'
+    if processing_type not in {"sylls", "phonemes", "chars"}:
+        raise ValueError("processing_type must be 'sylls', 'phonemes', or 'chars'")
+
+    if clean:
+        as_string = processing_type != "chars"
+        word = clean_ipa(word, as_string=as_string, processing_type=processing_type, delimiter=delimiter, language=language)
+
+    if processing_type == "chars":
+        return word if clean else GRAPHEME_RE.findall(word)
+
+    return [seg for seg in re.split(delimiter, word) if seg]
 
 
 def update_values_in_csv(language_to_update, value, n, value_type):
@@ -84,129 +171,148 @@ def get_info_rate(info_density, language):
     return info_rate_values
 
 
-def get_word_data(path, processing_type):
-    """
-    Reads a CSV file containing word frequency data and splits the words into syllables/characters/ phonemes
 
-    The function assumes:
-    - The CSV file is tab-separated (`\t`)
-    - There's a column with the syllabified phonetically transcribed words
-    - There's a column with the corresponding word frequencies
+def get_word_data(path, processing_type="sylls", clean=True):
+    """
+    Reads a CSV/TSV/Excel file of phonetically transcribed words and frequencies.
+    Splits the words into tokens (syllables, phonemes, or characters), repeated according to frequency.
 
     Args:
-        path (str): Path to the CSV file
+        path (str): Path to the data file.
+        processing_type (str): One of 'sylls', 'phonemes', 'chars'.
+        clean (bool): Whether to clean IPA before tokenizing.
 
     Returns:
-        list: A list of lists where each sublist is a word split into syllables,
-              repeated according to its frequency
+        list[list[str]]: Tokenized words, repeated by frequency.
     """
-    # Extract language from the file name
-    language = path.split("/")[2]
+
+    # Extract language from filename robustly
+    language = Path(path).parent.name.upper()
     print(f"Language: {language}")
+
+    # Configuration for each language
+    config = {
+        "FRA": {
+            "columns": ["syll", "freqfilms2"],
+            "excel_col_filter": "freqfilms2",
+            "delimiters": {"sylls": r"[.-]", "phonemes": "-"}
+        },
+        "DEU": {
+            "columns": ["PhonStrsDISC", "Word Mann"],
+            "excel_col_filter": "Word Mann",
+            "delimiters": {"sylls": "-", "phonemes": "-"}
+        },
+        "ENG": {"delimiters": {"sylls": r"[-.]", "phonemes": "-"}},
+        "CMN": {"delimiters": {"sylls": "_", "phonemes": "-"}},
+        "VIE": {"delimiters": {"sylls": "_", "phonemes": "-"}},
+        "JPN": {"delimiters": {"sylls": "_", "phonemes": "-"}},
+        "YUE": {"delimiters": {"sylls": "_", "phonemes": "-"}},
+    }
+
+    if language not in config:
+        raise ValueError(f"Unsupported language: {language}")
+
+    lang_cfg = config[language]
+    delimiter = lang_cfg.get("delimiters", {}).get(processing_type, "_")
 
     words = []
 
     if language in ["FRA", "DEU"]:
-        if language == "FRA":
-            columns = ["syll", "freqfilms2"]
-            syll_delimiter = r"[.-]"
-     
-        if language == "DEU":
-            columns = ["PhonStrsDISC", "Word Mann"]
-            syll_delimiter = r"-"
-    
-         # Use the correct reader for Excel
+        # Load appropriate file format
         if path.endswith(".xlsx"):
-            df = pd.read_excel(path, engine="openpyxl") 
-            df = df[df["Word Mann"] > 0]
+            df = pd.read_excel(path, engine="openpyxl")
+            df = df[df[lang_cfg["excel_col_filter"]] > 0]
         else:
             df = pd.read_csv(path, sep="\t", encoding="utf-8")
-
-
         for _, row in df.iterrows():
-            # Remove unwanted characters
-            print(f"word: {row[columns[0]]}")
-            cleaned_word = clean_ipa_str(row[columns[0]]) 
-            print(f"cleaned word: {cleaned_word}")
-              
+            raw_word = str(row[lang_cfg["columns"][0]])
+            freq = int(row[lang_cfg["columns"][1]])
+            tokens = tokenize(raw_word, processing_type, delimiter, clean, language)
 
-            # Split into the respective linguistic unit
-            if processing_type == "sylls": 
-                word_splitted = tokenize_sylls(cleaned_word, syll_delimiter)
-            elif processing_type == "chars": 
-                word_splitted = tokenize_chars(cleaned_word)
-            elif processing_type == "phonemes": 
-                word_splitted = tokenize_phonemes(cleaned_word)
-            else: 
-                raise ValueError(f"The processing type '{processing_type}' is not supported yet.")
+            words.extend([tokens] * freq)
 
-             # Get the frequency value
-            freq = int(row[columns[1]])
-            print(f"splitted with respect to {processing_type}: {word_splitted}")
-
-            # Replicate the syllables by the frequency and add them to the list
-            words.extend([word_splitted] * freq)
-
-    elif language  in ["CMN", "VIE", "JPN", "YUE", "ENG"]:
+    else:  # Text-based format (e.g. ENG, CMN, VIE, JPN, YUE)
         with open(path, 'r', encoding="utf-8") as file:
             for line in file:
-                # Split the line by tab character
-                word, freq = line.strip().split('\t')
-                if language == "ENG":
-                    syll_delimiter = r'[-.]'
-                else: 
-                    syll_delimiter = r"[_]"
-                
-                # Remove unwanted characters
-                print(f"word: {word}")
-                cleaned_word = clean_ipa_str(word) 
-                print(f"processing_type: {processing_type}")
-                print(f"cleaned word: {cleaned_word}")
-
-                if processing_type == "sylls": 
-                    word_splitted = tokenize_sylls(cleaned_word, syll_delimiter)
-                elif processing_type == "chars": 
-                    word_splitted = tokenize_chars(cleaned_word)
-                elif processing_type == "phonemes": 
-                    word_splitted = tokenize_phonemes(cleaned_word)
-                else: 
-                    raise ValueError(f"The processing type '{processing_type}' is not supported yet.")
-                
-                freq = int(float(freq))
-                print(f"splitted with respect to {processing_type}: {word_splitted}")
-                
-
-                # Replicate the word by its frequency 
-                words.extend([word_splitted] * freq)
+                try:
+                    raw_word, freq = line.strip().split('\t')
+                    freq = int(freq)
+                    tokens = tokenize(raw_word, processing_type, delimiter, clean, language)
+                    words.extend([tokens] * int(float(freq)))
+                except ValueError:
+                    continue  # skip malformed lines
 
     return words
 
-# Initialize the Segment class for tokenization
-seg = Segment(names=panphon.symbols.ipa_names)
 
-def get_phonemes(language):
-    # Load PHOIBLE data
-    url = "https://raw.githubusercontent.com/phoible/dev/master/data/phoible.csv"
-    phoible = pd.read_csv(url, low_memory=False)
+# --- Mandarin ---
+def cmn_to_ipa(text):
+    words = jieba.lcut(text)
+    ipa_words_list = []
+    for word in words:
+        pinyins = pypinyin_fn(word, style=Style.TONE3, heteronym=False)
+        syllables = [syll[0] for syll in pinyins]
+        ipa_words_list.append("_".join(syllables))
+    return ipa_words_list
 
-    # List of target languages and their selected inventories
-    inventories = {
-        'cmn': [2457],
-        'deu': [2398],
-        'eng': [2177],
-        'fra': [2182],
-        'jpn': [2196],
-        'vie': [2462],
-        'yue': [2309]
+
+# --- Cantonese ---
+
+def yue_to_ipa(text):
+    jyutping_list = pycantonese.characters_to_jyutping(text)
+    ipa_words_dict = [jp for jp in jyutping_list if jp]
+    ipa_words_list = [word[1] for word in ipa_words_dict if word is not None and word[1] is not None]
+    return ipa_words_list
+
+def text_to_ipa(text, language_key):
+    language_code_dict = {
+        'cat': 'ca', 'cmn': 'zh', 'deu': 'de', 'eng': 'en', 'eus': 'eu',
+        'fin': 'fi', 'fra': 'fr', 'hun': 'hu', 'ita': 'it', 'jpn': 'ja',
+        'kor': 'ko', 'spa': 'es', 'srp': 'sr', 'tha': 'th', 'tur': 'tr',
+        'vie': 'vi', 'yue': 'zh-yue'
     }
-     # Filter the dataframe to only include the rows for the target languages and selected inventories
-    filtered_df = phoible_df[phoible_df['ISO6393'].str.lower() == language.lower()]
-    filtered_df = filtered_df[filtered_df['InventoryID'].isin(inventories.get(language.lower(), []))]
-    
-    filtered_df['PhonemeLength'] = filtered_df['Phoneme'].apply(lambda x: len(str(x)))
-    ordered_data = filtered_df.sort_values(by='PhonemeLength', ascending=False)
 
-    # Select the relevant columns (Phoneme and Allophones)
-    filtered_df = filtered_df[['ISO6393', 'Phoneme', 'Allophones']]
-    return filtered_df
+    lang = language_key.lower()
+
+    if lang == "vie":
+        return np.nan
+
+    elif lang == "jpn":
+        return np.nan
+
+    elif lang == "tha":
+        return np.nan
+
+    elif lang == "cmn":
+        print(text)
+        print(f"IPA for {lang}: {cmn_to_ipa(text)}")
+        return cmn_to_ipa(text)
+
+    elif lang == "yue":
+        print(text)
+        print(f"IPA for {lang}: {yue_to_ipa(text)}")
+        return yue_to_ipa(text)
+
+    elif lang == "kor":
+        return np.nan
+
+    else:
+        espeak_lang = language_code_dict.get(lang, 'en')
+        result = subprocess.run(
+            ['espeak', '-q', '--ipa3', '-v', espeak_lang, text],
+            capture_output=True,
+            text=True
+        )
+        ipa = result.stdout.strip().replace('\n', ' ')
+        print(text)
+        print(f"IPA for {lang}: {ipa}")
+        return ipa.split()
+
+    # --- Apply to CSV ---
+    df = pd.read_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv')
+    df['ipa'] = df.apply(lambda row: text_to_ipa(row['text'], row['language']), axis=1)
+    df.to_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv', index=False)
+
+
+
     
