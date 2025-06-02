@@ -27,43 +27,36 @@ def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
     while preserving delimiter and language-specific meaningful IPA symbols.
     """
 
-    # General set of characters to strip (non-phonemic)
+    # Define language-specific meaningful symbols to preserve
+    config_df = pd.read_json("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
+    config_df.set_index("Language", inplace=True)
+    lang_cfg = config_df.loc[language]
+    keep_chars = set(lang_cfg["Keep Characters"])
+    
+    if isinstance(ipa_string, list):
+        ipa_string = " ".join(ipa_string)
+        
+    segments = GRAPHEME_RE.findall(ipa_string)
+
+    # Preserve any characters in the delimiter
+    # Split delimiters (e.g., '[.-]' → {'.', '-'})
+    delimiter_chars = set()
+    if isinstance(delimiter, str):
+        if delimiter.startswith("[") and delimiter.endswith("]"):
+            delimiter_chars = set(delimiter[1:-1])
+        else:
+            delimiter_chars = set(delimiter)
+
+     # Full preservation set
+    PRESERVE = keep_chars | delimiter_chars
+
     STRIP_CHARS = {
         'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ',
         '“', '”', '‘', '’', '《', '》', '【', '】', '（', '）', '(', ')', '[', ']', '{', '}', '§', '%',
         '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
         '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    }
-
-    # Define language-specific meaningful symbols to preserve
-    LANG_KEEP_CHARS = {
-        "FRA": {"@", "°"},
-        "DEU": {"@", "ː", "°"},
-        "ENG": {"ː", "ˑ", "ˈ", "ˌ"},
-        "YUE": set("123456789"),
-        "VIE": set("123456789"),
-        "CMN": set("123456789"),
-        "JPN": {"ː", "Q", "N"},
-    }
-
-    print(f"Original IPA string: {ipa_string}")
-    
-    if isinstance(ipa_string, list):
-        ipa_string = " ".join(ipa_string)
-        
-    segments = GRAPHEME_RE.findall(ipa_string)
-    print(f"Segments before cleaning: {segments}")
-
-    # Preserve any characters in the delimiter
-    if isinstance(delimiter, str):
-        if delimiter.startswith("[") and delimiter.endswith("]"):
-            STRIP_CHARS -= set(delimiter[1:-1])
-        else:
-            STRIP_CHARS.discard(delimiter)
-
-    # Subtract meaningful language-specific symbols
-    STRIP_CHARS -= LANG_KEEP_CHARS.get(language.upper(), set())
+    } - PRESERVE  # Subtract preserved symbols
 
     # Clean the segments
     cleaned_as_list = []
@@ -74,7 +67,6 @@ def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
             continue
         cleaned_as_list.append(seg)
 
-    print(f"Cleaned: {cleaned_as_list}")
     return "".join(cleaned_as_list) if as_string else cleaned_as_list
 
 
