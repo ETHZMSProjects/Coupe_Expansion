@@ -1,12 +1,16 @@
 import math
 from collections import defaultdict
+import pandas as pd
+import numpy as np
+import re
+from helpers import clean_ipa
 
     
 def log2(n):
     return math.log(n) / math.log(2)
 
 
-def compute_cond_entropy(file_path):
+def compute_cond_entropy(file_path, lang_cfg):
     """
     Computes:
       - Unigram entropy H(X)
@@ -15,38 +19,65 @@ def compute_cond_entropy(file_path):
       tuple: (ID_unigram, ID_bigram)
     """
 
+    columns = lang_cfg["Columns"] 
+
     # Initialize variables
     hash_map = defaultdict(int)
     total = 0
 
     # Read and process bigram frequency data
-    with open(file_path, 'r') as file:
-        for line in file:
-            word, freq = line.strip().split('\t')
-            freq = float(freq)
-            if freq > 0:
-                hash_map[word] += freq
-                total += freq
+    if lang_cfg.name in ["FRA", "DEU"]:
+        # Load appropriate file format
+        if file_path.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine="openpyxl")
+        else:
+            df = pd.read_csv(file_path, sep="\t", encoding="utf-8")
+
+        # Filter rows if a column filter is defined
+        if pd.notna(columns[1]) and columns[1] in df.columns:
+            df = df[df[columns[1]] > 0]
+
+        for _, row in df.iterrows():
+            raw_word = str(row[columns[0]])
+            freq = float(row[columns[1]])
+            hash_map[raw_word] += freq
+            total += freq
+
+    else:  # Text-based format (e.g. ENG, CMN, VIE, JPN, YUE)
+        with open(file_path, 'r') as file:
+            for line in file:
+                word, freq = line.strip().split('\t')
+                freq = float(freq)
+                if freq > 0:
+                    hash_map[word] += freq
+                    total += freq
+
 
     # Unigram entropy (ID_unigram) (added by esidaine)
     probs_unigram = {w: c / total for w, c in hash_map.items()}
     ID_unigram = -sum(p * log2(p) for p in probs_unigram.values())
 
-    # Calculate stats
-    type_count = len(hash_map)
-    most = max(hash_map, key=hash_map.get)
-    most_freq = hash_map[most]
-    hapax = sum(1 for v in hash_map.values() if v == 1)
-
     # Calculate bigram frequencies
     count = defaultdict(int)
-    for word in sorted(hash_map):
-        syllables = word.split('_')
-        for i in range (len(syllables) - 1):
-            bigram = (syllables[i], syllables[i + 1])
-            count[bigram] += hash_map[word]
-    
+    syll_delimiter = lang_cfg["Syllable Delimiter"]
+    if isinstance(syll_delimiter, str):
+        if syll_delimiter.startswith("[") and syll_delimiter.endswith("]"):
+            syll_delimiter = syll_delimiter[1:-1]
+        
+    for raw_word in sorted(hash_map):
+        syllables = re.split(f"[{syll_delimiter}]", raw_word)
 
+        # Clean each syllable individually (cleaning added by esidaine)
+        cleaned_syllables = [
+            "".join(clean_ipa(s, False, 'sylls', syll_delimiter, lang_cfg.name))
+            for s in syllables if s.strip()
+        ]
+        cleaned_syllables = [s for s in cleaned_syllables if s] # Remove empty strings
+    
+        for i in range(len(cleaned_syllables) - 1):
+            bigram = (cleaned_syllables[i], cleaned_syllables[i + 1])
+            count[bigram] += hash_map[raw_word]
+    
     # Compute prefix counts
     prefix_counts = defaultdict(int)
     for (x, y), freq in count.items():
@@ -78,7 +109,7 @@ def compute_cond_entropy(file_path):
 
     print("Total bigrams:", len(count))
     print("Most frequent bigram:", max(count, key=count.get))
-    print(f"{file_path} — Total syllable tokens: {total}")
+    print(f"Total syllable tokens: {total}")
     print(f"Unique sequences: {len(hash_map)}")
     print(f"Unique bigrams: {len(count)}")
     print(f"ID_unigram: {ID_unigram:.3f}, ID_bigram: {ID_bigram:.3f}")

@@ -1,0 +1,58 @@
+[
+  {
+    "Language": "FRA",
+    "Columns": ["syll", "freqfilms2"],
+    "Syllable Delimiter": "[.-]",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["@", "°"],
+    "Path": "Z:/data/FRA/Lexique383.tsv"
+  },
+  {
+    "Language": "DEU",
+    "Columns": ["PhonStrsDISC", "Word Mann"],
+    "Syllable Delimiter": "-",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["ː", "@", "°"],
+    "Path": "Z:/data/DEU/WebCelex_German.xlsx"
+  },
+  {
+    "Language": "ENG",
+    "Columns": [],
+    "Syllable Delimiter": "[-.]",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["ː", "ˌ", "ˈ", "ˑ"],
+    "Path": "Z:/data/ENG/eng.txt"
+  },
+  {
+    "Language": "CMN",
+    "Columns": [],
+    "Syllable Delimiter": "_",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
+    "Path": "Z:/data/CMN/cmn.txt"
+  },
+  {
+    "Language": "VIE",
+    "Columns": [],
+    "Syllable Delimiter": "_",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
+    "Path": "Z:/data/VIE/vie.txt"
+  },
+  {
+    "Language": "JPN",
+    "Columns": [],
+    "Syllable Delimiter": "_",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["ː", "N", "Q"],
+    "Path": "Z:/data/JPN/jpn.txt"
+  },
+  {
+    "Language": "YUE",
+    "Columns": [],
+    "Syllable Delimiter": "_",
+    "Phoneme Delimiter": "-",
+    "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
+    "Path": "Z:/data/YUE/yue.txt"
+  }
+]
