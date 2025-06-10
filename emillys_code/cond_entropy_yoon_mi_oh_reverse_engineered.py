@@ -115,3 +115,41 @@ def compute_cond_entropy(file_path, lang_cfg):
     print(f"ID_unigram: {ID_unigram:.3f}, ID_bigram: {ID_bigram:.3f}")
         
     return ID_unigram, ID_bigram
+
+
+def get_info_rate(info_density, language):
+    """
+    Calculates the information rate based on the provided information density.
+    The function assumes:
+    - The CSV file is tab-separated (`\t`)
+    - There's a column named 'nsyll' representing the number of syllables
+    - There's a column named 'phonationtime' representing the phonation time
+    Args:
+        info_density (float): Information density value
+    Returns:
+        float: Information rate per second
+    """
+    file_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
+    df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
+
+
+    # Filter rows where the Language matches
+    df['Language'] = df['soundname'].str[:3]
+    language_df = df[df['Language'] == language]
+
+    # Initialize an empty list to store info_rate values
+    info_rate_values = []
+
+    # Iterate through each speaker's data
+    for _, row in language_df.iterrows():
+        nsyll = row['nsyll']
+        phonationtime = row['phonationtime']
+
+        # Calculate speech rate
+        speech_rate = nsyll / phonationtime
+
+        # Calculate information rate
+        info_rate = info_density * speech_rate
+        info_rate_values.append(info_rate)
+
+    return info_rate_values
