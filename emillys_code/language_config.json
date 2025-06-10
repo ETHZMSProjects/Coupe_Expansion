@@ -4,8 +4,11 @@
     "Columns": ["syll", "freqfilms2"],
     "Syllable Delimiter": "[.-]",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["@", "°"],
-    "Path": "Z:/data/FRA/Lexique383.tsv"
+    "Keep Characters": ["@", "°", "'"],
+    "IPA Code": "fr",
+    "Epitran Code": "fra-Latn",
+    "Coupe Data": "Z:/data/FRA/Lexique383.tsv", 
+    "Sentence Data": "Z:/data/FRA/french_sentences.txt"
   },
   {
     "Language": "DEU",
@@ -13,7 +16,8 @@
     "Syllable Delimiter": "-",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "@", "°"],
-    "Path": "Z:/data/DEU/WebCelex_German.xlsx"
+    "IPA Code": "de",
+    "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx"
   },
   {
     "Language": "ENG",
@@ -21,7 +25,8 @@
     "Syllable Delimiter": "[-.]",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "ˌ", "ˈ", "ˑ"],
-    "Path": "Z:/data/ENG/eng.txt"
+    "IPA Code": "en",
+    "Coupe Data": "Z:/data/ENG/eng.txt"
   },
   {
     "Language": "CMN",
@@ -29,7 +34,7 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "Path": "Z:/data/CMN/cmn.txt"
+    "Coupe Data": "Z:/data/CMN/cmn.txt"
   },
   {
     "Language": "VIE",
@@ -37,7 +42,8 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "Path": "Z:/data/VIE/vie.txt"
+    "IPA Code": "vi",
+    "Coupe Data": "Z:/data/VIE/vie.txt"
   },
   {
     "Language": "JPN",
@@ -45,7 +51,8 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "N", "Q"],
-    "Path": "Z:/data/JPN/jpn.txt"
+    "IPA Code": "ja",
+    "Coupe Data": "Z:/data/JPN/jpn.txt"
   },
   {
     "Language": "YUE",
@@ -53,6 +60,7 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "Path": "Z:/data/YUE/yue.txt"
+    "IPA Code": "zh-yue",
+    "Coupe Data": "Z:/data/YUE/yue.txt"
   }
 ]
