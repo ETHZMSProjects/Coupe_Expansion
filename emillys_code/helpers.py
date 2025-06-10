@@ -4,24 +4,21 @@ import warnings
 import os
 import re
 from pathlib import Path
-import panphon
-from panphon.segment import Segment
-from segments.tokenizer import Tokenizer
 import subprocess
 import numpy as np
 import jieba
 import unicodedata
-import pandas as pd
 import regex as re
 import pycantonese
 from g2pk import G2p
 from pypinyin import Style, pinyin as pypinyin_fn
+import string
 
 
 # Regex for grapheme clusters
 GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
 
-def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
+def clean_ipa(ipa_string, as_string, delimiter, language):
     """
     Cleans a given IPA string by removing non-phonemic characters,
     while preserving delimiter and language-specific meaningful IPA symbols.
@@ -35,7 +32,10 @@ def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
     
     if isinstance(ipa_string, list):
         ipa_string = " ".join(ipa_string)
-        
+    
+    # First, globally remove any ( ... ) artifacts
+    ipa_string = re.sub(r"\(.*?\)", "", ipa_string)
+
     segments = GRAPHEME_RE.findall(ipa_string)
 
     # Preserve any characters in the delimiter
@@ -51,8 +51,8 @@ def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
     PRESERVE = keep_chars | delimiter_chars
 
     STRIP_CHARS = {
-        'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ',
-        '“', '”', '‘', '’', '《', '》', '【', '】', '（', '）', '(', ')', '[', ']', '{', '}', '§', '%',
+        'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ', '-', '(', ')', '"', "'", '`', '’',
+        '“', '”', '‘', '’', '《', '》', '【', '】','[', ']', '{', '}', '§', '%', ' ',
         '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
         '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
@@ -61,32 +61,18 @@ def clean_ipa(ipa_string, as_string, processing_type, delimiter, language):
     # Clean the segments
     cleaned_as_list = []
     for seg in segments:
+        seg = re.sub(r"\(.*?\)", "", seg)  # remove weird parenthesis artifacts
         if seg in STRIP_CHARS:
             continue
         if any(unicodedata.category(char).startswith('S') for char in seg):  # Symbol characters
             continue
-        cleaned_as_list.append(seg)
-
+        seg = seg.strip() # remove trailing spaces and empty segments
+        if seg:
+            cleaned_as_list.append(seg)
+    if not cleaned_as_list: 
+        return None
+        
     return "".join(cleaned_as_list) if as_string else cleaned_as_list
-
-
-def tokenize(word, processing_type, delimiter, clean, language):
-    """
-    Tokenizes a given word into syllables, ipa segments or phonemes. 
-    Assumes the input word is in IPA format with syllable or phoneme boundaries marked by a specific delimeter.
-    """
-    # e.g. word = 'tʃɪ_nə_ɛ̃wɑː_r_ɪŋ'
-    if processing_type not in {"sylls", "phonemes", "chars"}:
-        raise ValueError("processing_type must be 'sylls', 'phonemes', or 'chars'")
-
-    if clean:
-        as_string = processing_type != "chars"
-        word = clean_ipa(word, as_string=as_string, processing_type=processing_type, delimiter=delimiter, language=language)
-
-    if processing_type == "chars":
-        return word if clean else GRAPHEME_RE.findall(word)
-
-    return [seg for seg in re.split(delimiter, word) if seg]
 
 
 def update_values_in_csv(language_to_update, value, n, value_type):
@@ -121,11 +107,11 @@ def update_values_in_csv(language_to_update, value, n, value_type):
         summary_df.loc[summary_df['Language'] == language_to_update, column] = value
 
     # Save the updated DataFrame to the CSV file
-    summary_df.to_csv('syll_comparison_coupe_esidaine.csv', index=False)
+    summary_df.to_csv('syll_comparison_coupe_esidaine.csv', sep='\t', index=False)
     print(f"Updated {column}")
 
 
-def get_info_rate(info_density, language):
+def compute_info_rate(info_density, processing_type, language):
     """
     Calculates the information rate based on the provided information density.
     The function assumes:
@@ -137,30 +123,107 @@ def get_info_rate(info_density, language):
     Returns:
         float: Information rate per second
     """
-    file_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
-    df = pd.read_csv(file_path, sep="\t")  # Assuming the file is tab-separated
 
+    counts_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+    speech_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
 
-    # Filter rows where the Language matches
-    df['Language'] = df['soundname'].str[:3]
-    language_df = df[df['Language'] == language]
+ 
+    counts_df = pd.read_csv(counts_df_path, sep="\t")
+    speech_df = pd.read_csv(speech_df_path, sep="\t")
+
+    speech_df['language'] = speech_df['soundname'].str[:3]
+    speech_df['passage_name'] = speech_df['soundname'].str[-2:]
+
+    # Filter the data by the specified language
+    speech_df_lang = speech_df[speech_df['language'] == language].copy()
+    counts_df_lang = counts_df[counts_df['language'] == language].copy()
+
+    # Merge the two dataframes
+    merged_df = pd.merge(
+        speech_df_lang,
+        counts_df_lang,
+        left_on=['language', 'passage_name'],
+        right_on=['language', 'passage_name'],
+        how='left'
+    )
 
     # Initialize an empty list to store info_rate values
     info_rate_values = []
 
     # Iterate through each speaker's data
-    for _, row in language_df.iterrows():
-        nsyll = row['nsyll']
+    for _, row in merged_df.iterrows():
+        if processing_type == 'sylls': 
+            n_units = row['n_syllables']
+        elif processing_type == 'phonemes':
+            n_units = row['n_phonemes']
+        else: 
+            warnings.warn("Unknown processing_type. Use 'sylls' or 'phonemes'.")
+            return []
+
         phonationtime = row['phonationtime']
 
         # Calculate speech rate
-        speech_rate = nsyll / phonationtime
+        speech_rate = n_units / phonationtime
 
         # Calculate information rate
         info_rate = info_density * speech_rate
         info_rate_values.append(info_rate)
 
     return info_rate_values
+
+
+def load_config(language, key):
+    config_path = Path("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
+    config_df = pd.read_json(config_path)
+    config_df.set_index("Language", inplace=True)
+
+    try:
+        lang_cfg = config_df.loc[language]
+        result = lang_cfg[key]
+    except KeyError:
+        print(f"Key '{key}' not found, either {language} or {key} is not supported.")
+        return
+    return result
+
+
+def get_ipa_espeak(word, espeak_code):
+    """Get IPA transcription from espeak-ng."""
+
+    # normalize the word
+    word = unicodedata.normalize("NFC", word)
+    # remove punctuation
+    no_punct = word.strip(string.punctuation)
+
+    try:
+        result = subprocess.run(
+            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', word],
+            capture_output=True, text=True
+        )
+        return result.stdout.strip()
+    except Exception as e:
+        print(f"espeak-ng failed on word '{word}': {e}")
+        return ""
+
+
+def phoneme_tokenization(word, language): 
+    # Unicode grapheme cluster matcher for phonemes tokenization
+    grapheme_pattern = re.compile(r'\X', re.UNICODE)
+
+    espeak_code = load_config(language, "IPA Code")
+
+    # Convert to IPA 
+    word_ipa = get_ipa_espeak(word, espeak_code)
+    # Clean IPA 
+    cleaned_ipa = clean_ipa(word_ipa, True, '', language)
+    # print(f"Word: {word}, uncleaned: {word_ipa}, cleaned: {cleaned_ipa}")
+
+    if not cleaned_ipa:
+        return None  # remove empty strings
+
+    # Tokenize into phonemes
+    phonemes = [match.group() for match in grapheme_pattern.finditer(cleaned_ipa) if match.group() not in (' ', '')]
+
+    return phonemes
 
 
 
@@ -256,7 +319,7 @@ def yue_to_ipa(text):
     ipa_words_list = [word[1] for word in ipa_words_dict if word is not None and word[1] is not None]
     return ipa_words_list
 
-def text_to_ipa(text, language_key):
+def text_to_ipa(language):
     language_code_dict = {
         'cat': 'ca', 'cmn': 'zh', 'deu': 'de', 'eng': 'en', 'eus': 'eu',
         'fin': 'fi', 'fra': 'fr', 'hun': 'hu', 'ita': 'it', 'jpn': 'ja',
@@ -264,46 +327,60 @@ def text_to_ipa(text, language_key):
         'vie': 'vi', 'yue': 'zh-yue'
     }
 
+    # Load configuration CSV
+    config_df = pd.read_json("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
+    config_df.set_index("Language", inplace=True) 
+
+    try:
+        lang_cfg = config_df.loc[language]
+        espeak_lang = lang_cfg["IPA Code"]
+    except KeyError:
+        print(f"Language '{language}' not found in configuration.")
+        return
+
     lang = language_key.lower()
 
-    if lang == "vie":
-        return np.nan
+    with open(path, "rb") as f:
+        text = pickle.load(f)
 
-    elif lang == "jpn":
-        return np.nan
+    for sentence in text:
+        if lang == "vie":
+            return np.nan
 
-    elif lang == "tha":
-        return np.nan
+        elif lang == "jpn":
+            return np.nan
 
-    elif lang == "cmn":
-        print(text)
-        print(f"IPA for {lang}: {cmn_to_ipa(text)}")
-        return cmn_to_ipa(text)
+        elif lang == "tha":
+            return np.nan
 
-    elif lang == "yue":
-        print(text)
-        print(f"IPA for {lang}: {yue_to_ipa(text)}")
-        return yue_to_ipa(text)
+        elif lang == "cmn":
+            print(text)
+            print(f"IPA for {lang}: {cmn_to_ipa(text)}")
+            return cmn_to_ipa(text)
 
-    elif lang == "kor":
-        return np.nan
+        elif lang == "yue":
+            print(text)
+            print(f"IPA for {lang}: {yue_to_ipa(text)}")
+            return yue_to_ipa(text)
 
-    else:
-        espeak_lang = language_code_dict.get(lang, 'en')
-        result = subprocess.run(
-            ['espeak', '-q', '--ipa3', '-v', espeak_lang, text],
-            capture_output=True,
-            text=True
-        )
-        ipa = result.stdout.strip().replace('\n', ' ')
-        print(text)
-        print(f"IPA for {lang}: {ipa}")
-        return ipa.split()
+        elif lang == "kor":
+            return np.nan
+
+        else:
+            result = subprocess.run(
+                ['espeak', '-q', '--ipa3', '-v', espeak_lang, text],
+                capture_output=True,
+                text=True
+            )
+            ipa_text = result.stdout.strip().replace('\n', ' ')
+            print(ipa_text)
+            print(f"IPA for {lang}: {ipa}")
+            return ipa.split()
 
     # --- Apply to CSV ---
     df = pd.read_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv')
     df['ipa'] = df.apply(lambda row: text_to_ipa(row['text'], row['language']), axis=1)
-    df.to_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv', index=False)
+    df.to_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv', sep='\t', index=False)
 
 
 
