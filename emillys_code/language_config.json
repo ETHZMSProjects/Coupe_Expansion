@@ -5,8 +5,9 @@
     "Syllable Delimiter": "[.-]",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["@", "°", "'"],
-    "IPA Code": "fr",
-    "Epitran Code": "fra-Latn",
+    "espeak Code": "fr",
+    "num2words Code": "fr",
+    "charsiu Code": "fra",
     "Coupe Data": "Z:/data/FRA/Lexique383.tsv", 
     "Sentence Data": "Z:/data/FRA/french_sentences.txt"
   },
@@ -16,7 +17,8 @@
     "Syllable Delimiter": "-",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "@", "°"],
-    "IPA Code": "de",
+    "espeak Code": "de",
+    "charsiu Code": "deu",
     "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx"
   },
   {
@@ -25,8 +27,10 @@
     "Syllable Delimiter": "[-.]",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "ˌ", "ˈ", "ˑ"],
-    "IPA Code": "en",
-    "Coupe Data": "Z:/data/ENG/eng.txt"
+    "espeak Code": "en",
+    "charsiu Code": "eng-us",
+    "Coupe Data": "Z:/data/ENG/eng.txt", 
+    "Sentence Data": "Z:/data/ENG/en.tok"
   },
   {
     "Language": "CMN",
@@ -34,7 +38,10 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "Coupe Data": "Z:/data/CMN/cmn.txt"
+    "espeak Code": "zh",
+    "charsiu Code": "cmn",
+    "Coupe Data": "Z:/data/CMN/cmn.txt", 
+    "Sentence Data": "Z:/data/CMN/cmn.tok"
   },
   {
     "Language": "VIE",
@@ -42,7 +49,8 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "IPA Code": "vi",
+    "espeak Code": "vi",
+    "charsiu Code": "vie",
     "Coupe Data": "Z:/data/VIE/vie.txt"
   },
   {
@@ -51,8 +59,10 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["ː", "N", "Q"],
-    "IPA Code": "ja",
-    "Coupe Data": "Z:/data/JPN/jpn.txt"
+    "espeak Code": "ja",
+    "charsiu Code": "jpn",
+    "Coupe Data": "Z:/data/JPN/jpn.txt", 
+    "Sentence Data": "Z:/data/JPN/ja.tok"
   },
   {
     "Language": "YUE",
@@ -60,7 +70,36 @@
     "Syllable Delimiter": "_",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
-    "IPA Code": "zh-yue",
+    "espeak Code": "zh-yue",
+    "charsiu Code": "yue",
     "Coupe Data": "Z:/data/YUE/yue.txt"
+  }, 
+  {
+    "Language": "ESP",
+    "espeak Code": "es", 
+    "charsiu Code": "spa", 
+    "Sentence Data": "Z:/data/ESP/es.tok"
+  },
+  {
+    "Language": "ITA",
+    "espeak Code": "it",
+    "charsiu Code": "ita", 
+    "Sentence Data":"Z:/data/ITA/it.tok"
+  },
+  {
+    "Language": "KOR",
+    "espeak Code": "ko",
+    "charsiu Code": "kor", 
+    "Sentence Data": "Z:/data/KOR/ko.tok"
+  },
+  {
+    "Language": "TR",
+    "espeak Code": "tr",
+    "charsiu Code": "tur"
+  },
+  {
+    "Language": "FI",
+    "espeak Code": "fi",
+    "charsiu Code": "fin"
   }
 ]

@@ -2,113 +2,57 @@ from math import log2
 import pandas as pd
 import warnings
 import os
-import re
 from pathlib import Path
-import subprocess
 import numpy as np
-import jieba
-import unicodedata
-import regex as re
-import pycantonese
-from g2pk import G2p
-from pypinyin import Style, pinyin as pypinyin_fn
-import string
+import pandas as pd
+from syllabification import phone_tokenization, syllable_tokenization, parse_to_phones_and_sylls
+from process_ipa import generate_ipa, load_charsiu_model
 
 
-# Regex for grapheme clusters
-GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
-
-def clean_ipa(ipa_string, as_string, delimiter, language):
-    """
-    Cleans a given IPA string by removing non-phonemic characters,
-    while preserving delimiter and language-specific meaningful IPA symbols.
-    """
-
-    # Define language-specific meaningful symbols to preserve
-    config_df = pd.read_json("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
-    config_df.set_index("Language", inplace=True)
-    lang_cfg = config_df.loc[language]
-    keep_chars = set(lang_cfg["Keep Characters"])
-    
-    if isinstance(ipa_string, list):
-        ipa_string = " ".join(ipa_string)
-    
-    # First, globally remove any ( ... ) artifacts
-    ipa_string = re.sub(r"\(.*?\)", "", ipa_string)
-
-    segments = GRAPHEME_RE.findall(ipa_string)
-
-    # Preserve any characters in the delimiter
-    # Split delimiters (e.g., '[.-]' → {'.', '-'})
-    delimiter_chars = set()
-    if isinstance(delimiter, str):
-        if delimiter.startswith("[") and delimiter.endswith("]"):
-            delimiter_chars = set(delimiter[1:-1])
-        else:
-            delimiter_chars = set(delimiter)
-
-     # Full preservation set
-    PRESERVE = keep_chars | delimiter_chars
-
-    STRIP_CHARS = {
-        'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ', '-', '(', ')', '"', "'", '`', '’',
-        '“', '”', '‘', '’', '《', '》', '【', '】','[', ']', '{', '}', '§', '%', ' ',
-        '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
-        '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    } - PRESERVE  # Subtract preserved symbols
-
-    # Clean the segments
-    cleaned_as_list = []
-    for seg in segments:
-        seg = re.sub(r"\(.*?\)", "", seg)  # remove weird parenthesis artifacts
-        if seg in STRIP_CHARS:
-            continue
-        if any(unicodedata.category(char).startswith('S') for char in seg):  # Symbol characters
-            continue
-        seg = seg.strip() # remove trailing spaces and empty segments
-        if seg:
-            cleaned_as_list.append(seg)
-    if not cleaned_as_list: 
-        return None
-        
-    return "".join(cleaned_as_list) if as_string else cleaned_as_list
-
-
-def update_values_in_csv(language_to_update, value, n, value_type):
+def update_values_in_csv(language_to_update, value, n, value_type, text_type):
     model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
     if not model:
         raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
 
-    if value_type == "ID":
-        column = f"ID_{model}_esidaine"
-    elif value_type == "IR":
-        column = f"IR_{model}_esidaine"
+    if value_type == "ID" or value_type == "IR":
+        ling_unit_comparison_column = f"{value_type}_{model}"
+        inter_intra_comparison_column = f"{text_type}_{value_type}_{model}"
     else:
         raise ValueError("Invalid value_type. Use 'ID' or 'IR'.")
 
-    summary_df = pd.read_csv('syll_comparison_coupe_esidaine.csv')
+
+    ling_unit_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv')
+    inter_intra_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/word_sent_comparison.csv')
 
     # Check if the column exists, if not, create it with NaN values
-    if column not in summary_df.columns:
-        summary_df[column] = np.nan
+    if ling_unit_comparison_column not in ling_unit_comparison_df.columns:
+        ling_unit_comparison_df[ling_unit_comparison_column] = np.nan
+    if inter_intra_comparison_column not in inter_intra_comparison_df.columns:
+        inter_intra_comparison_df[inter_intra_comparison_column] = np.nan
 
+    print(inter_intra_comparison_df.columns)
+    print(ling_unit_comparison_df.columns)
 
     # If value is a list, update info_rate for each speaker of that language
     if isinstance(value, list):
         # Ensure the length of the value list matches the number of speakers for the language
-        language_speakers = summary_df[summary_df['Language'] == language_to_update]
+        language_speakers = ling_unit_comparison_df[ling_unit_comparison_df['Language'] == language_to_update]
         if len(value) != len(language_speakers):
             raise ValueError("The length of the value list must match the number of speakers for the specified language.")
 
         for idx, val in zip(language_speakers.index, value):
-            summary_df.at[idx, column] = round(val, 3)
+            ling_unit_comparison_df.at[idx, ling_unit_comparison_column] = round(val, 3)
+            inter_intra_comparison_df.at[idx, inter_intra_comparison_column] = round(val, 3)
     else: 
-        summary_df.loc[summary_df['Language'] == language_to_update, column] = value
+        ling_unit_comparison_df.loc[ling_unit_comparison_df['Language'] == language_to_update, ling_unit_comparison_column] = value
+        inter_intra_comparison_df.loc[inter_intra_comparison_df['Language'] == language_to_update, inter_intra_comparison_column] = value
 
     # Save the updated DataFrame to the CSV file
-    summary_df.to_csv('syll_comparison_coupe_esidaine.csv', sep='\t', index=False)
-    print(f"Updated {column}")
+    ling_unit_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv', index=False)
+    inter_intra_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv', index=False)
+
+    print(f"Updated {ling_unit_comparison_column}")
+    print(f"Updated {inter_intra_comparison_column}")
 
 
 def compute_info_rate(info_density, processing_type, language):
@@ -154,10 +98,10 @@ def compute_info_rate(info_density, processing_type, language):
     for _, row in merged_df.iterrows():
         if processing_type == 'sylls': 
             n_units = row['n_syllables']
-        elif processing_type == 'phonemes':
-            n_units = row['n_phonemes']
+        elif processing_type == 'phones':
+            n_units = row['n_phones']
         else: 
-            warnings.warn("Unknown processing_type. Use 'sylls' or 'phonemes'.")
+            warnings.warn("Unknown processing_type. Use 'sylls' or 'phones'.")
             return []
 
         phonationtime = row['phonationtime']
@@ -186,201 +130,147 @@ def load_config(language, key):
     return result
 
 
-def get_ipa_espeak(word, espeak_code):
-    """Get IPA transcription from espeak-ng."""
+def check_data_avilability(language, processing_type): 
 
-    # normalize the word
-    word = unicodedata.normalize("NFC", word)
-    # remove punctuation
-    no_punct = word.strip(string.punctuation)
-
-    try:
-        result = subprocess.run(
-            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', word],
-            capture_output=True, text=True
-        )
-        return result.stdout.strip()
-    except Exception as e:
-        print(f"espeak-ng failed on word '{word}': {e}")
-        return ""
-
-
-def phoneme_tokenization(word, language): 
-    # Unicode grapheme cluster matcher for phonemes tokenization
-    grapheme_pattern = re.compile(r'\X', re.UNICODE)
-
-    espeak_code = load_config(language, "IPA Code")
-
-    # Convert to IPA 
-    word_ipa = get_ipa_espeak(word, espeak_code)
-    # Clean IPA 
-    cleaned_ipa = clean_ipa(word_ipa, True, '', language)
-    # print(f"Word: {word}, uncleaned: {word_ipa}, cleaned: {cleaned_ipa}")
-
-    if not cleaned_ipa:
-        return None  # remove empty strings
-
-    # Tokenize into phonemes
-    phonemes = [match.group() for match in grapheme_pattern.finditer(cleaned_ipa) if match.group() not in (' ', '')]
-
-    return phonemes
-
-
-
-def get_word_data(path, processing_type="sylls", clean=True):
     """
-    Reads a CSV/TSV/Excel file of phonetically transcribed words and frequencies.
-    Splits the words into tokens (syllables, phonemes, or characters), repeated according to frequency.
+    Checks whether required processed data and unit count data are available for a given language.
 
     Args:
-        path (str): Path to the data file.
-        processing_type (str): One of 'sylls', 'phonemes', 'chars'.
-        clean (bool): Whether to clean IPA before tokenizing.
+        processing_type (str): One of 'phones' or 'sylls'.
+        text_type (str): Currently unused, but reserved for future use.
+        language (str): Language code (e.g., 'FRA').
+        folder (str): Directory containing processed JSON files.
 
     Returns:
-        list[list[str]]: Tokenized words, repeated by frequency.
+        str: Path to the prepared data file.
+
+    Raises:
+        ValueError: If input type is invalid or required files/data are missing.
+        KeyError: If the raw corpus is not registered.
     """
+    folder = f"produced_data/{language}"
 
-    # Extract language from filename robustly
-    language = Path(path).parent.name.upper()
-    print(f"Language: {language}")
+    if processing_type not in ['phones', 'sylls']:
+        raise ValueError("❌ Invalid processing type. Use 'phones' or 'sylls'.")
 
-    # Configuration for each language
-    config = {
-        "FRA": {
-            "columns": ["syll", "freqfilms2"],
-            "excel_col_filter": "freqfilms2",
-            "delimiters": {"sylls": r"[.-]", "phonemes": "-"}
-        },
-        "DEU": {
-            "columns": ["PhonStrsDISC", "Word Mann"],
-            "excel_col_filter": "Word Mann",
-            "delimiters": {"sylls": "-", "phonemes": "-"}
-        },
-        "ENG": {"delimiters": {"sylls": r"[-.]", "phonemes": "-"}},
-        "CMN": {"delimiters": {"sylls": "_", "phonemes": "-"}},
-        "VIE": {"delimiters": {"sylls": "_", "phonemes": "-"}},
-        "JPN": {"delimiters": {"sylls": "_", "phonemes": "-"}},
-        "YUE": {"delimiters": {"sylls": "_", "phonemes": "-"}},
-    }
+    filename = f"phonemized_{language}.json" if processing_type == 'phones' else f"syllabized_{language}.json"
+    input_path = os.path.join(folder, filename)
 
-    if language not in config:
-        raise ValueError(f"Unsupported language: {language}")
+    # Check if the input file exists
 
-    lang_cfg = config[language]
-    delimiter = lang_cfg.get("delimiters", {}).get(processing_type, "_")
-
-    words = []
-
-    if language in ["FRA", "DEU"]:
-        # Load appropriate file format
-        if path.endswith(".xlsx"):
-            df = pd.read_excel(path, engine="openpyxl")
-            df = df[df[lang_cfg["excel_col_filter"]] > 0]
-        else:
-            df = pd.read_csv(path, sep="\t", encoding="utf-8")
-        for _, row in df.iterrows():
-            raw_word = str(row[lang_cfg["columns"][0]])
-            freq = int(row[lang_cfg["columns"][1]])
-            tokens = tokenize(raw_word, processing_type, delimiter, clean, language)
-
-            words.extend([tokens] * freq)
-
-    else:  # Text-based format (e.g. ENG, CMN, VIE, JPN, YUE)
-        with open(path, 'r', encoding="utf-8") as file:
-            for line in file:
-                try:
-                    raw_word, freq = line.strip().split('\t')
-                    freq = int(freq)
-                    tokens = tokenize(raw_word, processing_type, delimiter, clean, language)
-                    words.extend([tokens] * int(float(freq)))
-                except ValueError:
-                    continue  # skip malformed lines
-
-    return words
+    if not os.path.exists(input_path):
+        print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
+        try: 
+            data_path = load_config(language, 'Sentence Data')
+            print(f"✅ Raw sentence-level corpus found at {data_path}.")
+            print(f"👉 Please run `parse_to_phones_and_sylls('{language}')` to generate the required data.")
+            response = input(f"❓ Do you want to run `parse_to_phones_and_sylls('{language}')` [y/n]: ").strip().lower()
+            if response in ['y', 'yes']:
+                parse_to_phones_and_sylls(language)        
+        except KeyError:
+            raise KeyError(f"❌ No raw sentence-level corpus registered for '{language}'. Please choose a different language.")
+        return None
 
 
-# --- Mandarin ---
-def cmn_to_ipa(text):
-    words = jieba.lcut(text)
-    ipa_words_list = []
-    for word in words:
-        pinyins = pypinyin_fn(word, style=Style.TONE3, heteronym=False)
-        syllables = [syll[0] for syll in pinyins]
-        ipa_words_list.append("_".join(syllables))
-    return ipa_words_list
+    ling_unit_count_csv_path = (
+        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+    )
+
+    check_failed = False
+
+    # Check if file exists 
+    if not os.path.isfile(ling_unit_count_csv_path):
+        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}. "
+              f"👉 Please run `count_ling_units('{language}')` to generate it."
+        )
+        check_failed = True
+        
+     # Load and check content
+    df = pd.read_csv(ling_unit_count_csv_path, sep=None, engine='python')  # auto-detect delimiter
+    
+    if language not in df["language"].unique() or "n_phones" not in df.columns or "n_syllables" not in df.columns:
+        print(f"❌ Linguistic unit counts for '{language}' not found in the respective csv file. "
+              f" 👉 Please run count_ling_units ('{language}') first"
+        )
+        check_failed = True
+
+    # Check for non-null values in 'n_phones' and 'n_syllables'
+    subset = df[df["language"] == language]
+    if subset["n_phones"].isnull().any() or subset["n_syllables"].isnull().any():
+        print(f"❌ Linguistic unit counts for '{language}' not found in the respective csv file. "
+              f" 👉 Please run count_ling_units{language} first"
+        )
+        check_failed = True
+    
+    if check_failed:
+        response = input(f"❓ Do you want to run `count_ling_units('{language}')` [y/n]: ").strip().lower()
+        if response in ['y', 'yes']:
+            count_ling_units(language)
+        else: raise FileNotFoundError(f" Stopping execution.")
+
+    return input_path
 
 
-# --- Cantonese ---
 
-def yue_to_ipa(text):
-    jyutping_list = pycantonese.characters_to_jyutping(text)
-    ipa_words_dict = [jp for jp in jyutping_list if jp]
-    ipa_words_list = [word[1] for word in ipa_words_dict if word is not None and word[1] is not None]
-    return ipa_words_list
+def count_ling_units(language):
+    print(f"Running linguistic unit counting for {language}. This may take a while...")
 
-def text_to_ipa(language):
-    language_code_dict = {
-        'cat': 'ca', 'cmn': 'zh', 'deu': 'de', 'eng': 'en', 'eus': 'eu',
-        'fin': 'fi', 'fra': 'fr', 'hun': 'hu', 'ita': 'it', 'jpn': 'ja',
-        'kor': 'ko', 'spa': 'es', 'srp': 'sr', 'tha': 'th', 'tur': 'tr',
-        'vie': 'vi', 'yue': 'zh-yue'
-    }
+    # Load CSV and language config
+    df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/semantically_similar_texts.csv")
 
-    # Load configuration CSV
-    config_df = pd.read_json("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
-    config_df.set_index("Language", inplace=True) 
+    tokenizer, model = load_charsiu_model()
 
-    try:
-        lang_cfg = config_df.loc[language]
-        espeak_lang = lang_cfg["IPA Code"]
-    except KeyError:
-        print(f"Language '{language}' not found in configuration.")
-        return
+    # Filter rows with respect to language
+    df = df[df["language"] == language].copy()  
 
-    lang = language_key.lower()
+    # Result lists
+    ipa_column = []
+    n_phones_column = []
+    n_syllables_column = []
 
-    with open(path, "rb") as f:
-        text = pickle.load(f)
 
-    for sentence in text:
-        if lang == "vie":
-            return np.nan
+    for idx, row in df.iterrows():
+        text = str(row["text"]).strip()
 
-        elif lang == "jpn":
-            return np.nan
+        # IPA transcription and phoneme an syllable count
+        all_ipa = []
+        all_phones = []
+        all_syllables = []
 
-        elif lang == "tha":
-            return np.nan
+        for word in text.split():
 
-        elif lang == "cmn":
-            print(text)
-            print(f"IPA for {lang}: {cmn_to_ipa(text)}")
-            return cmn_to_ipa(text)
+            # Convert to ipa 
+            cleaned_ipa, _ = generate_ipa(word, language, tokenizer, model)
 
-        elif lang == "yue":
-            print(text)
-            print(f"IPA for {lang}: {yue_to_ipa(text)}")
-            return yue_to_ipa(text)
+            if not cleaned_ipa:
+                continue # removal of empty strings
+            all_ipa.append(cleaned_ipa)
 
-        elif lang == "kor":
-            return np.nan
+            # Tokenize into phones
+            phones = phone_tokenization(cleaned_ipa)
+            all_phones.extend(phones)
 
-        else:
-            result = subprocess.run(
-                ['espeak', '-q', '--ipa3', '-v', espeak_lang, text],
-                capture_output=True,
-                text=True
-            )
-            ipa_text = result.stdout.strip().replace('\n', ' ')
-            print(ipa_text)
-            print(f"IPA for {lang}: {ipa}")
-            return ipa.split()
+            # Tokenize into syllables
+            syllables = syllable_tokenization(cleaned_ipa, language)
+            all_syllables.extend(syllables)
 
-    # --- Apply to CSV ---
-    df = pd.read_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv')
-    df['ipa'] = df.apply(lambda row: text_to_ipa(row['text'], row['language']), axis=1)
-    df.to_csv('semantically_similar_texts/semantically_similar_texts_with_ipa.csv', sep='\t', index=False)
+        ipa_column.append(all_ipa)
+        n_phones_column.append(len(all_phones))
+        n_syllables_column.append(len(all_syllables))
+
+    # Add to dataframe
+    df["ipa"] = ipa_column
+    df["n_phonemes"] = n_phones_column
+    df["n_syllables"] = n_syllables_column
+
+    # Save result
+    output_path = "semantically_similar_texts/ling_units_counts.csv"
+    df.to_csv(output_path, sep="\t", index=False, encoding="utf-8")
+    print(f"✅ Linguistic units counted and saved to: {output_path}")
+
+
+
+
 
 
 
