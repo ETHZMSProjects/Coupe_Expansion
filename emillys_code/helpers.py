@@ -5,8 +5,10 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from syllabification import phone_tokenization, syllable_tokenization, parse_to_phones_and_sylls
-from process_ipa import generate_ipa, load_charsiu_model
+from syllabification import phone_tokenization, syllable_tokenization, parse_to_phones_and_sylls, get_onsets_ipa
+from process_ipa import generate_ipa, load_charsiu_model, load_config
+import sys
+from tqdm import tqdm
 
 
 def update_values_in_csv(language_to_update, value, n, value_type, text_type):
@@ -22,7 +24,7 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type):
 
 
     ling_unit_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv')
-    inter_intra_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/word_sent_comparison.csv')
+    inter_intra_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv')
 
     # Check if the column exists, if not, create it with NaN values
     if ling_unit_comparison_column not in ling_unit_comparison_df.columns:
@@ -30,8 +32,6 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type):
     if inter_intra_comparison_column not in inter_intra_comparison_df.columns:
         inter_intra_comparison_df[inter_intra_comparison_column] = np.nan
 
-    print(inter_intra_comparison_df.columns)
-    print(ling_unit_comparison_df.columns)
 
     # If value is a list, update info_rate for each speaker of that language
     if isinstance(value, list):
@@ -51,9 +51,6 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type):
     ling_unit_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv', index=False)
     inter_intra_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv', index=False)
 
-    print(f"Updated {ling_unit_comparison_column}")
-    print(f"Updated {inter_intra_comparison_column}")
-
 
 def compute_info_rate(info_density, processing_type, language):
     """
@@ -68,7 +65,7 @@ def compute_info_rate(info_density, processing_type, language):
         float: Information rate per second
     """
 
-    counts_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+    counts_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.tsv"
     speech_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
 
  
@@ -116,104 +113,112 @@ def compute_info_rate(info_density, processing_type, language):
     return info_rate_values
 
 
-def load_config(language, key):
-    config_path = Path("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
-    config_df = pd.read_json(config_path)
-    config_df.set_index("Language", inplace=True)
+import ipywidgets as widgets
 
-    try:
-        lang_cfg = config_df.loc[language]
-        result = lang_cfg[key]
-    except KeyError:
-        print(f"Key '{key}' not found, either {language} or {key} is not supported.")
-        return
-    return result
+def ask_question(question, function_to_run, language):
+    """
+    Asks a question and runs a function based on the user's response.
+    Args:
+        question (str): The question to ask the user.
+        function_to_run (function): The function to run if the user answers 'yes'.
+        language (str): The language code to pass to the function.
+    """
+    print(f"{question}")
+    answer = input(f"{question}").strip().lower()
+    print(f"> {answer}")
+    if answer in ['y', 'yes']:
+        function_to_run(language)
+        return True
+    else:
+        print(f"📂 No data available. Skipping...")
+        return False
 
 
-def check_data_avilability(language, processing_type): 
 
+def check_data_availability(language, processing_type): 
     """
     Checks whether required processed data and unit count data are available for a given language.
 
     Args:
-        processing_type (str): One of 'phones' or 'sylls'.
-        text_type (str): Currently unused, but reserved for future use.
         language (str): Language code (e.g., 'FRA').
-        folder (str): Directory containing processed JSON files.
+        processing_type (str): One of 'phones' or 'sylls'.
 
     Returns:
-        str: Path to the prepared data file.
+        Path or None: Path to the prepared data file, or None if checks failed.
 
     Raises:
-        ValueError: If input type is invalid or required files/data are missing.
-        KeyError: If the raw corpus is not registered.
+        ValueError: If processing_type is invalid.
+        KeyError: If no raw corpus is registered for the language.
     """
-    folder = f"produced_data/{language}"
+    
+
+  
 
     if processing_type not in ['phones', 'sylls']:
         raise ValueError("❌ Invalid processing type. Use 'phones' or 'sylls'.")
 
-    filename = f"phonemized_{language}.json" if processing_type == 'phones' else f"syllabized_{language}.json"
-    input_path = os.path.join(folder, filename)
+    folder = Path("produced_data") / language
+    filename = f"phonized_{language}.json" if processing_type == 'phones' else f"syllabified_{language}.json"
+    input_path = folder / filename
 
     # Check if the input file exists
 
-    if not os.path.exists(input_path):
+    if not input_path.exists():
         print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
         try: 
             data_path = load_config(language, 'Sentence Data')
-            print(f"✅ Raw sentence-level corpus found at {data_path}.")
-            print(f"👉 Please run `parse_to_phones_and_sylls('{language}')` to generate the required data.")
-            response = input(f"❓ Do you want to run `parse_to_phones_and_sylls('{language}')` [y/n]: ").strip().lower()
-            if response in ['y', 'yes']:
-                parse_to_phones_and_sylls(language)        
+            print(f"📄 However, raw sentence-level corpus found at {data_path}. \n"
+                  f"👉 Please run `parse_to_phones_and_sylls('{language}')` to generate the required data.")
+            sys.stdout.flush() #  Force the print to show up immediately
+            if not ask_question(f"❓ Do you want to run it now? [y/n]:", parse_to_phones_and_sylls, language): 
+                return None               
         except KeyError:
             raise KeyError(f"❌ No raw sentence-level corpus registered for '{language}'. Please choose a different language.")
         return None
 
 
-    ling_unit_count_csv_path = (
-        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+    ling_unit_count_csv_path = Path(
+        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.tsv"
     )
 
     check_failed = False
 
     # Check if file exists 
-    if not os.path.isfile(ling_unit_count_csv_path):
-        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}. "
-              f"👉 Please run `count_ling_units('{language}')` to generate it."
+    if not ling_unit_count_csv_path.is_file():
+        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.\n 👉 Please run `count_ling_units('{language}')` to generate it."
         )
+        sys.stdout.flush() #  Force the print to show up immediately
         check_failed = True
-        
-     # Load and check content
-    df = pd.read_csv(ling_unit_count_csv_path, sep=None, engine='python')  # auto-detect delimiter
     
-    if language not in df["language"].unique() or "n_phones" not in df.columns or "n_syllables" not in df.columns:
-        print(f"❌ Linguistic unit counts for '{language}' not found in the respective csv file. "
-              f" 👉 Please run count_ling_units ('{language}') first"
-        )
-        check_failed = True
+    else:  
+        # Load and check content
+        df = pd.read_csv(ling_unit_count_csv_path, sep=None, engine='python')  # auto-detect delimiter
+        unit_col = 'n_phones' if processing_type == 'phones' else 'n_syllables'
+        required_columns = {"language", unit_col}
 
-    # Check for non-null values in 'n_phones' and 'n_syllables'
-    subset = df[df["language"] == language]
-    if subset["n_phones"].isnull().any() or subset["n_syllables"].isnull().any():
-        print(f"❌ Linguistic unit counts for '{language}' not found in the respective csv file. "
-              f" 👉 Please run count_ling_units{language} first"
-        )
-        check_failed = True
+        if not required_columns.issubset(df.columns) or language not in df["language"].unique():
+            print(f"❌ Required columns or language entry missing in data file.\n"
+                  f"👉 Please run count_ling_units('{language}') first.")
+            sys.stdout.flush() #  Force the print to show up immediately
+            check_failed = True
+        else:
+            subset = df[df["language"] == language]
+            if subset[unit_col].isnull().any():
+                print(f"❌ Missing values for '{language}' in required data file.\n"
+                      f"👉 Please run count_ling_units('{language}') again.")
+                sys.stdout.flush() #  Force the print to show up immediately
+                check_failed = True
     
     if check_failed:
-        response = input(f"❓ Do you want to run `count_ling_units('{language}')` [y/n]: ").strip().lower()
-        if response in ['y', 'yes']:
-            count_ling_units(language)
-        else: raise FileNotFoundError(f" Stopping execution.")
-
-    return input_path
+        if not ask_question(f"❓ Do you want to run it now? [y/n]:", count_ling_units, language): 
+            return None
+    print(f"✅ All checks passed. Passing {input_path}")
+    return input_path 
 
 
 
 def count_ling_units(language):
-    print(f"Running linguistic unit counting for {language}. This may take a while...")
+    print(f"👉 Running linguistic unit counting for {language}. This may take a while...")
 
     # Load CSV and language config
     df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/semantically_similar_texts.csv")
@@ -229,7 +234,7 @@ def count_ling_units(language):
     n_syllables_column = []
 
 
-    for idx, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), total=len(df), desc=f"🔄 Processing:", ncols=80):
         text = str(row["text"]).strip()
 
         # IPA transcription and phoneme an syllable count
@@ -251,7 +256,7 @@ def count_ling_units(language):
             all_phones.extend(phones)
 
             # Tokenize into syllables
-            syllables = syllable_tokenization(cleaned_ipa, language)
+            syllables = syllable_tokenization(cleaned_ipa, get_onsets_ipa(language), language, tokenizer, model)
             all_syllables.extend(syllables)
 
         ipa_column.append(all_ipa)
@@ -260,11 +265,12 @@ def count_ling_units(language):
 
     # Add to dataframe
     df["ipa"] = ipa_column
-    df["n_phonemes"] = n_phones_column
-    df["n_syllables"] = n_syllables_column
+    df["n_phones"] = n_phones_column
+    df["n_syllables"] = n_syllables_column 
+
 
     # Save result
-    output_path = "semantically_similar_texts/ling_units_counts.csv"
+    output_path = "semantically_similar_texts/ling_units_counts.tsv"
     df.to_csv(output_path, sep="\t", index=False, encoding="utf-8")
     print(f"✅ Linguistic units counted and saved to: {output_path}")
 
