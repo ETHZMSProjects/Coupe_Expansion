@@ -9,7 +9,7 @@
     "num2words Code": "fr",
     "charsiu Code": "fra",
     "Coupe Data": "Z:/data/FRA/Lexique383.tsv", 
-    "Sentence Data": "Z:/data/FRA/french_sentences.txt"
+    "Sentence Data": "Z:/data/FRA/fr.tok"
   },
   {
     "Language": "DEU",
@@ -79,27 +79,5 @@
     "espeak Code": "es", 
     "charsiu Code": "spa", 
     "Sentence Data": "Z:/data/ESP/es.tok"
-  },
-  {
-    "Language": "ITA",
-    "espeak Code": "it",
-    "charsiu Code": "ita", 
-    "Sentence Data":"Z:/data/ITA/it.tok"
-  },
-  {
-    "Language": "KOR",
-    "espeak Code": "ko",
-    "charsiu Code": "kor", 
-    "Sentence Data": "Z:/data/KOR/ko.tok"
-  },
-  {
-    "Language": "TR",
-    "espeak Code": "tr",
-    "charsiu Code": "tur"
-  },
-  {
-    "Language": "FI",
-    "espeak Code": "fi",
-    "charsiu Code": "fin"
   }
 ]
