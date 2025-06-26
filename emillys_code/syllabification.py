@@ -2,11 +2,18 @@ import os
 import regex as re
 import pickle
 from collections import Counter
-from process_ipa import generate_ipa
-from process_ipa import load_charsiu_model
-import json
-from process_ipa import load_config
+from process_ipa import load_charsiu_model, load_config, parallelize_ipa_generation
 from tqdm import tqdm
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+logging.basicConfig(level=logging.INFO)
+
+def syllable_tokenization_wrapper(args):
+    ipa, onsets = args
+    return syllable_tokenization(ipa, onsets)
+
 
 # --- Main Processing Function ---
 def parse_to_phones_and_sylls(language):
@@ -17,116 +24,82 @@ def parse_to_phones_and_sylls(language):
     Args:
         language (str): The ISO 639-3 language code (e.g., 'FRA').
     """
-    print(f"👉 Running parsing to syllables and phones for {language}. This may take a while...")
 
     # Load tokenized text (assuming this is orthographic text, not IPA)
     #input_path = f"produced_data/{language}/{language}_original_sentences.pkl"
     input_path = load_config(language, 'Sentence Data')
     
-    if not os.path.exists(input_path):
-        print(f"Language corpus '{input_path}' for {language} does not exist.")
-        return
-    else: print(f"Tokenized language corpus for {language} found at {input_path}")
-    
-    # Load the tok data
-    with open(input_path, "r", encoding="utf-8") as f:
-        text = [line.strip().split() for line in f if line.strip()]
+    try:
+        if not os.path.exists(input_path):
+            raise FileNotFoundError(f"Missing required language corpus for {language}: {input_path}")
+        
+        tqdm.write("📥 Loading corpus data ...")
+        text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
+
+
+    except FileNotFoundError as e:
+        logging.error(e)
+        raise 
+
+    if len(text) == 0:
+        raise ValueError("No data loaded. Input file may be empty or incorrectly formatted.")
+    else: tqdm.write(f"✅ Loaded {len(text)} sentences from {input_path}")
+
 
     tokenizer, model = load_charsiu_model()
+    onsets = get_onsets_ipa(language)
 
     phonemized_data = []  # list of lists for phonemes
     syllabized_data = []  # list of lists for syllables 
+    
+    ipa_sentences = parallelize_ipa_generation(text, language, tokenizer, model)
 
-    print(f"Language: {language}")
-
-    for sentence in tqdm(text, desc=f"🔄 Processing:", ncols=80):
-        sentence_phonemes = []
+    for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Processing", ncols=80):
+        sentence_phones = []
         sentence_syllables = []
+        
+        inputs = [(ipa, onsets, language, tokenizer, model) for ipa in ipa_sentence]
 
-        for word in sentence:
-            # Phone tokenization
-            phones = phone_tokenization(word, language)
-            if phones:
-                sentence_phonemes.append(phones)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(syllable_tokenization_wrapper, inputs))
 
-            # Syllable tokenization 
-            syllables = syllable_tokenization(word, get_onsets_ipa(language), language, tokenizer, model)
-            if syllables:
-                sentence_syllables.append(syllables)
+        # One list of phones and one of syllables for each sentence
+        sentence_phones = [r[0] for r in results]
+        sentence_syllables = [r[1] for r in results]
 
-        phonemized_data.append(sentence_phonemes)
+        phonemized_data.append(sentence_phones)
         syllabized_data.append(sentence_syllables)
 
-    # Save data
+    # Save results
     folder = f"produced_data/{language}"
-    os.makedirs(folder, exist_ok=True)
+    os.makedirs(f"{folder}/phones", exist_ok=True)
+    os.makedirs(f"{folder}/sylls", exist_ok=True)
 
-    pho_output_path = f"{folder}/phonized_{language}.json"
-    sylls_output_path = f"{folder}/syllabified_{language}.json" 
+    pho_output_path = f"{folder}/phones/phonized_{language}.pkl"
+    sylls_output_path = f"{folder}/sylls/syllabified_{language}.pkl"
+    ipa_output_path = f"{folder}/ipa_corpus_{language}.pkl"
 
-    with open(pho_output_path, 'w', encoding='utf-8') as f:
-        json.dump(phonemized_data, f, ensure_ascii=False, indent=2)
 
-    with open(sylls_output_path, 'w', encoding='utf-8') as f:
-        json.dump(syllabized_data, f, ensure_ascii=False, indent=2)
+    with open(f"{pho_output_path}.pkl", "wb") as f:
+        pickle.dump(phonemized_data, f)
+
+    with open(f"{sylls_output_path}.pkl", "wb") as f:
+        pickle.dump(syllabized_data, f)
+
+    with open(f"{ipa_output_path}.pkl", "wb") as f:
+        pickle.dump(ipa_sentences, f)
 
     print(f"✅ Phonemization completed. Data saved to {pho_output_path}.")
     print(f"✅ Syllabification completed. Data saved to {sylls_output_path}.")
 
 
+    
 
 
-def prepare_text_for_onsets(language):
-    """
-    Loads tokenized sentences for a language, converts each word to IPA,
-    cleans the IPA output, and flattens the sentences into a list of words.
-    Saves the resulting list to a pickle file.
-    """
-    tokenizer, model = load_charsiu_model()
-
-    # Input path
-    input_path = f"produced_data/{language}/{language}_original_sentences.pkl"
-    if not os.path.exists(input_path):
-        print(f"Language corpus '{input_path}' for {language} does not exist.")
-        return
-
-    # Load tokenized text (list of list of words)
-    with open(input_path, "rb") as f:
-        sentences = pickle.load(f)
-
-    # Convert each word in each sentence to cleaned IPA
-    ipa_sentences = []
-    for sentence in sentences:
-        sentence_ipa = []
-        for word in sentence:
-            cleaned_ipa, _ = generate_ipa(word, language, tokenizer, model)
-            sentence_ipa.append(cleaned_ipa)
-        ipa_sentences.append(sentence_ipa)
-
-    # Flatten the list of sentences into a single list of words
-    flat_ipa_words = [word for sentence in ipa_sentences for word in sentence if word]
-    print(f"Total words processed: {len(flat_ipa_words)}")
-
-    # Save the processed text
-    output_dir = f"produced_data/{language}"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, f"{language}_ipa_sentences.pkl")
-
-    with open(output_file, "wb") as f:
-        pickle.dump(flat_ipa_words, f)
-
-    print(f"Onsets for {language} saved to '{output_file}'")
-
-
-def syllable_tokenization(word, onsets, language, tokenizer, model):
+def syllable_tokenization(cleaned_ipa, onsets):
     """
     Performs automatic syllabification of a word using IPA transcriptions and language-specific phonotactic constraints.
     """
-    cleaned_ipa, _ = generate_ipa(word, language, tokenizer, model)
-    
-    if not cleaned_ipa:
-        print(f"Failed to generate IPA for word: {word}")
-        return []
 
     phones = phone_tokenization(cleaned_ipa)
     syllables = []
@@ -242,7 +215,7 @@ def syllable_tokenization(word, onsets, language, tokenizer, model):
     # This would typically be applied for finer-grained decisions where Maximal Onset might be ambiguous,
     # or for languages where SSP is the primary rule (e.g., Italian for Coda formation).
 
-    return syllables
+    return phones, syllables
 
 
 def sonori_syllabify(stressed_ipa):
@@ -262,15 +235,16 @@ def get_onsets_ipa(language, threshold=.0002):
     See https://github.com/henchc/syllabipy/blob/master/syllabipy/legalipy.py
     '''
 
-    input_file = f"produced_data/{language}/{language}_ipa_sentences.pkl"
+    folder = f"produced_data/{language}"
+    ipa_path = f"{folder}/ipa_corpus_{language}.pkl"
 
-    # Check if the input file exists, if not, create it
-    if not os.path.exists(input_file):
-        prepare_text_for_onsets(language)
+    with open(ipa_path, "rb") as f:
+        ipa_sentences = pickle.load(f)
 
-    # Load the list of IPA words
-    with open(input_file, "rb") as f:
-        text = pickle.load(f)
+    # Flatten the list of sentences into a single list of words
+    text = [word for sentence in ipa_sentences for word in sentence if word]
+
+    print(f"Flat corpus length: {len(text)}")
     
     # All valid ipa vowels
     # see https://www.internationalphoneticassociation.org/content/ipa-vowels
@@ -319,5 +293,8 @@ def phone_tokenization(word):
     phones = [match.group() for match in grapheme_pattern.finditer(word) if match.group() not in (' ', '')]
 
     return phones
+
+
+
 
 

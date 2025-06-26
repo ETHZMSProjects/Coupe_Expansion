@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from syllabification import phone_tokenization, syllable_tokenization, parse_to_phones_and_sylls, get_onsets_ipa
+from syllabification import syllable_tokenization, parse_to_phones_and_sylls, get_onsets_ipa, merge_clitics
 from process_ipa import generate_ipa, load_charsiu_model, load_config
 import sys
 from tqdm import tqdm
@@ -113,8 +113,6 @@ def compute_info_rate(info_density, processing_type, language):
     return info_rate_values
 
 
-import ipywidgets as widgets
-
 def ask_question(question, function_to_run, language):
     """
     Asks a question and runs a function based on the user's response.
@@ -150,15 +148,14 @@ def check_data_availability(language, processing_type):
         ValueError: If processing_type is invalid.
         KeyError: If no raw corpus is registered for the language.
     """
-    
 
-  
+    print("Checking data availability...")
 
     if processing_type not in ['phones', 'sylls']:
         raise ValueError("❌ Invalid processing type. Use 'phones' or 'sylls'.")
 
-    folder = Path("produced_data") / language
-    filename = f"phonized_{language}.json" if processing_type == 'phones' else f"syllabified_{language}.json"
+    folder = Path("produced_data") / language / processing_type
+    filename = f"phonized_{language}.pkl" if processing_type == 'phones' else f"syllabified_{language}.pkl"
     input_path = folder / filename
 
     # Check if the input file exists
@@ -218,12 +215,13 @@ def check_data_availability(language, processing_type):
 
 
 def count_ling_units(language):
-    print(f"👉 Running linguistic unit counting for {language}. This may take a while...")
 
     # Load CSV and language config
     df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/semantically_similar_texts.csv")
 
     tokenizer, model = load_charsiu_model()
+    punctuation = {'.', ',', '?', '!'}
+    onsets = get_onsets_ipa(language)
 
     # Filter rows with respect to language
     df = df[df["language"] == language].copy()  
@@ -234,7 +232,7 @@ def count_ling_units(language):
     n_syllables_column = []
 
 
-    for _, row in tqdm(df.iterrows(), total=len(df), desc=f"🔄 Processing:", ncols=80):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc=f"🔄 Processing", ncols=80):
         text = str(row["text"]).strip()
 
         # IPA transcription and phoneme an syllable count
@@ -242,22 +240,29 @@ def count_ling_units(language):
         all_phones = []
         all_syllables = []
 
-        for word in text.split():
+        tokens = text.split()
+
+        if language in ["FRA"]:
+            tokens = merge_clitics(tokens)
+
+        for word in tokens:
+            if word in punctuation: 
+                continue
 
             # Convert to ipa 
-            cleaned_ipa, _ = generate_ipa(word, language, tokenizer, model)
+            cleaned_ipa = generate_ipa(word, language, tokenizer, model)
 
             if not cleaned_ipa:
                 continue # removal of empty strings
             all_ipa.append(cleaned_ipa)
 
-            # Tokenize into phones
-            phones = phone_tokenization(cleaned_ipa)
-            all_phones.extend(phones)
+            # Tokenize into syllables and phones
+            phones, syllables = syllable_tokenization(cleaned_ipa, onsets)
+            if syllables: 
+                all_syllables.extend(syllables)
 
-            # Tokenize into syllables
-            syllables = syllable_tokenization(cleaned_ipa, get_onsets_ipa(language), language, tokenizer, model)
-            all_syllables.extend(syllables)
+            if phones: 
+                all_phones.extend(phones)
 
         ipa_column.append(all_ipa)
         n_phones_column.append(len(all_phones))

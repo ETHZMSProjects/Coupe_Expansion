@@ -8,6 +8,10 @@ import regex as re
 import torch
 from transformers import T5ForConditionalGeneration, AutoTokenizer
 from pathlib import Path
+from num2words import num2words
+from more_itertools import chunked
+from tqdm import tqdm
+from itertools import accumulate
 
 
 def load_config(language, key):
@@ -22,6 +26,21 @@ def load_config(language, key):
         print(f"Key '{key}' not found, either {language} or {key} is not supported.")
         return
     return result
+
+
+def merge_clitics(tokens):
+    merged = []
+    skip = False
+    for i, token in enumerate(tokens):
+        if skip:
+            skip = False
+            continue
+        if token.endswith("'") and i + 1 < len(tokens):
+            merged.append(token + tokens[i + 1])
+            skip = True
+        else:
+            merged.append(token)
+    return merged
 
 
 # --- CharsiuG2P Model Setup ---
@@ -48,53 +67,110 @@ def load_charsiu_model():
     return charsiu_tokenizer, charsiu_model
 
 
+def convert_numbers(word, language): 
+    num2word_code = load_config(language, "num2words Code")
+    if language not in ["YUE", "CMN", "VIE"]: 
+        # convert numbers to words
+        try:
+            word = re.sub(r'\d+', lambda x: num2words(int(x.group()), lang=num2word_code.lower()), word)
+        except NotImplementedError:
+            print(f"Language '{language}' not supported by num2words. Skipping number conversion.")
+    return word
 
-def generate_ipa(orthographic_word, language, tokenizer, model):
-    if not orthographic_word:
-        return "", ""
+def parallelize_ipa_generation(text, language, tokenizer, model):
+    """
+    Flattens sentences into words, batch-generates IPA using G2P, 
+    and reconstructs the sentence structure.
+    
+    Args:
+        text (list of list of str): Sentences as lists of words.
+        language (str): Language code (e.g., "FRA").
+        tokenizer: HuggingFace tokenizer.
+        model: HuggingFace model.
+
+    Returns:
+        list of list of str: Sentences as lists of IPA transcriptions.
+    """
+    
+    # Remove punctuation tokens and flatten
+    punctuation = {'.', ',', '?', '!'}
+    text = [[word for word in sentence if word not in punctuation] for sentence in text]
+
+    flat_words = []
+    sentence_lengths = []
+
+    for sentence in text:
+        if language == "FRA":
+            sentence = merge_clitics(sentence)
+        sentence_lengths.append(len(sentence))
+        flat_words.extend(sentence)
+
+    print("🔠 Generating IPA...")
+
+    # Batch IPA generation
+    ipa_flat = generate_ipa(flat_words, language, tokenizer, model)
+
+    # Sanity check
+    if not all(ipa_flat):
+        for w, ipa in zip(flat_words, ipa_flat):
+            if not ipa:
+                print(f"⚠️ Failed to generate IPA for word: {w}")
+        return [], []
+
+    # Reconstruct sentence structure
+    indices = list(accumulate(sentence_lengths))
+    start = 0
+    ipa_sentences = []
+    for end in indices:
+        ipa_sentences.append(ipa_flat[start:end])
+        start = end
+
+    return ipa_sentences
+
+
+def generate_ipa(word_list, language, tokenizer, model, stressed = False):
+    if not word_list:
+        return []
+    
+    # Convert numbers
+    word_list = [convert_numbers(w, language) for w in word_list]
     
     ### 1. Use g2p model to generate IPA
 
     # CharsiuG2P requires a language prefix and a space after the colon
     # Example: "<eng>: hello" or "<fra>: bonjour"
     charsiu_code = load_config(language, 'charsiu Code')
-    input_text = f"<{charsiu_code}>: {orthographic_word}"
+    tagged_words = [f"<{charsiu_code}>: {w.lower()}" for w in word_list]
 
-    try:
-        input_ids = tokenizer(
-            [input_text],
-            padding=True,
-            add_special_tokens=False,
-            return_tensors='pt'
-        ).input_ids
+    ipa_results = []
+    model.eval()
 
-        # Move input to GPU if model is on GPU
-        if torch.cuda.is_available():
-            input_ids = input_ids.to('cuda')
+    # Move model to GPU once if available
+    if torch.cuda.is_available():
+        model = model.to('cuda')
 
-        # Generate phonetic transcription in ipa
-        preds = model.generate(
-            input_ids,
-            num_beams=1, # greedy decoding
-            max_length=50, # Adjust max_length as needed for longer words
-            do_sample=False # For deterministic output
-        )
+    with torch.no_grad():
+        for batch in chunked(tagged_words, 64):
+            encoded = tokenizer(batch, padding=True, return_tensors='pt')
+            if torch.cuda.is_available():
+                encoded = {k: v.to('cuda') for k, v in encoded.items()}
+            preds = model.generate(
+                input_ids=encoded["input_ids"],
+                attention_mask=encoded["attention_mask"],
+                num_beams=1,
+                max_length=50,
+                do_sample=False
+            )
+            decoded = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)
+            cleaned_batch = [clean_ipa(ipa, True, '', language) for ipa in decoded]
+            ipa_results.extend([ipa for ipa in cleaned_batch if ipa])
 
-        # Decode the generated tokens
-        g2p_ipa = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)[0]
-
-        cleaned_g2p_ipa = clean_ipa(g2p_ipa, True, '', language)  # Clean the IPA output (mostly not necessary for CharsiuG2P)
-
-        ### 2. Use espeak to get IPA with stress marks
+    ### 2. Use espeak to get IPA with stress marks
+    if stressed: 
         espeak_code = load_config(language, 'espeak Code')
-        stressed_ipa = get_ipa_espeak(orthographic_word, espeak_code)
+        ipa_results = [get_ipa_espeak(w, espeak_code) for w in word_list]
 
-        return cleaned_g2p_ipa, stressed_ipa
-
-    except Exception as e:
-        print(f"Error generating ipa for '{orthographic_word}' in '{language}': {e}")
-        return "", "" # Return empty string on error
-    
+    return ipa_results
 
 
 # Regex for grapheme clusters
@@ -136,8 +212,7 @@ def clean_ipa(ipa_string, as_string, delimiter, language):
         'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ', '-', '(', ')', '"', "'", '`', '’',
         '“', '”', '‘', '’', '《', '》', '【', '】','[', ']', '{', '}', '§', '%', ' ',
         '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
-        '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：'
     } - PRESERVE  # Subtract preserved symbols
 
     # Clean the segments
@@ -167,7 +242,7 @@ def get_ipa_espeak(word, espeak_code):
 
     try:
         result = subprocess.run(
-            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', no_punct],
+            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', no_punct.lower()],
             capture_output=True, text=True
         )
         return result.stdout.strip()
