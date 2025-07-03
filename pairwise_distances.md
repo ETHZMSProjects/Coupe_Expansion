@@ -291,5 +291,3 @@ You can add or remove distance methods by modifying the `methods` vector:
 ```r
 methods <- c("Kolmogorov–Smirnov", "Kullback-Leibler", "Jensen-Shannon", "Hellinger", "Squared-Chi")
 ```
-
-### Customizing Visualizations
