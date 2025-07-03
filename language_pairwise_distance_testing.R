@@ -269,14 +269,13 @@ for(i in 1:length(methods)) {
   
   plot_list[[i]] <- ggplot(d[d$Method == method,], aes(x=Measure, y=Distance, color=Measure, fill=Measure)) + 
     geom_boxplot(alpha=0.3) + 
-    theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1), 
           legend.position="none", 
           axis.title.x=element_blank(), 
           axis.title.y=element_blank()) + 
     ggtitle(label) +
-    scale_color_brewer(type="qual", palette="Dark2") +
-    scale_fill_brewer(type="qual", palette="Dark2")
+    scale_color_manual(values=c("#F8766D", "#00BA38", "#619CFF")) +
+    scale_fill_manual(values=c("#F8766D", "#00BA38", "#619CFF"))
 }
 
 # Function to arrange multiple plots
@@ -388,7 +387,7 @@ cat("Total observations:", nrow(analysis_data), "\n\n", file=report_file, append
 # Display results
 cat("\n" %+% "="*60 %+% "\n")
 cat("ANALYSIS COMPLETE\n")
-cat("="*60 %+% "\n")
+
 
 cat("Configuration used:\n")
 cat("- Unit count:", unit_count_column, "->", unit_count_label, "\n")
