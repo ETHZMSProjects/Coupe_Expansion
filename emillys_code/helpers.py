@@ -1,14 +1,10 @@
-from math import log2
 import pandas as pd
-import warnings
-import os
 from pathlib import Path
 import numpy as np
-import pandas as pd
-from syllabification import syllable_tokenization, parse_to_phones_and_sylls, get_onsets_ipa, merge_clitics
-from process_ipa import generate_ipa, load_charsiu_model, load_config
+from syllabification import parse_to_phones_and_sylls
 import sys
-from tqdm import tqdm
+from config_loader import load_config
+from info_rate import count_ling_units
 
 
 def update_values_in_csv(language_to_update, value, n, value_type, text_type):
@@ -51,66 +47,6 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type):
     ling_unit_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv', index=False)
     inter_intra_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv', index=False)
 
-
-def compute_info_rate(info_density, processing_type, language):
-    """
-    Calculates the information rate based on the provided information density.
-    The function assumes:
-    - The CSV file is tab-separated (`\t`)
-    - There's a column named 'nsyll' representing the number of syllables
-    - There's a column named 'phonationtime' representing the phonation time
-    Args:
-        info_density (float): Information density value
-    Returns:
-        float: Information rate per second
-    """
-
-    counts_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.tsv"
-    speech_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
-
- 
-    counts_df = pd.read_csv(counts_df_path, sep="\t")
-    speech_df = pd.read_csv(speech_df_path, sep="\t")
-
-    speech_df['language'] = speech_df['soundname'].str[:3]
-    speech_df['passage_name'] = speech_df['soundname'].str[-2:]
-
-    # Filter the data by the specified language
-    speech_df_lang = speech_df[speech_df['language'] == language].copy()
-    counts_df_lang = counts_df[counts_df['language'] == language].copy()
-
-    # Merge the two dataframes
-    merged_df = pd.merge(
-        speech_df_lang,
-        counts_df_lang,
-        left_on=['language', 'passage_name'],
-        right_on=['language', 'passage_name'],
-        how='left'
-    )
-
-    # Initialize an empty list to store info_rate values
-    info_rate_values = []
-
-    # Iterate through each speaker's data
-    for _, row in merged_df.iterrows():
-        if processing_type == 'sylls': 
-            n_units = row['n_syllables']
-        elif processing_type == 'phones':
-            n_units = row['n_phones']
-        else: 
-            warnings.warn("Unknown processing_type. Use 'sylls' or 'phones'.")
-            return []
-
-        phonationtime = row['phonationtime']
-
-        # Calculate speech rate
-        speech_rate = n_units / phonationtime
-
-        # Calculate information rate
-        info_rate = info_density * speech_rate
-        info_rate_values.append(info_rate)
-
-    return info_rate_values
 
 
 def ask_question(question, function_to_run, language):
@@ -162,16 +98,12 @@ def check_data_availability(language, processing_type):
 
     if not input_path.exists():
         print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
-        try: 
-            data_path = load_config(language, 'Sentence Data')
-            print(f"📄 However, raw sentence-level corpus found at {data_path}. \n"
-                  f"👉 Please run `parse_to_phones_and_sylls('{language}')` to generate the required data.")
-            sys.stdout.flush() #  Force the print to show up immediately
-            if not ask_question(f"❓ Do you want to run it now? [y/n]:", parse_to_phones_and_sylls, language): 
-                return None               
-        except KeyError:
-            raise KeyError(f"❌ No raw sentence-level corpus registered for '{language}'. Please choose a different language.")
-        return None
+
+        data_path = load_config(language, 'Sentence Data')
+        print(f"👉 Please run parse_to_phones_and_sylls('{language}') to generate the required data.")
+        sys.stdout.flush() #  Force the print to show up immediately
+        if not ask_question(f"❓ Do you want to run it now? [y/n]:", parse_to_phones_and_sylls, language): 
+            return None               
 
 
     ling_unit_count_csv_path = Path(
@@ -182,7 +114,7 @@ def check_data_availability(language, processing_type):
 
     # Check if file exists 
     if not ling_unit_count_csv_path.is_file():
-        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.\n 👉 Please run `count_ling_units('{language}')` to generate it."
+        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.\n 👉 Please run count_ling_units('{language}') to generate it."
         )
         sys.stdout.flush() #  Force the print to show up immediately
         check_failed = True
@@ -209,75 +141,24 @@ def check_data_availability(language, processing_type):
     if check_failed:
         if not ask_question(f"❓ Do you want to run it now? [y/n]:", count_ling_units, language): 
             return None
-    print(f"✅ All checks passed. Passing {input_path}")
-    return input_path 
+        else: 
+            if ling_unit_count_csv_path.is_file():
+                check_failed = False
+    
+    # Final recheck after attempted fixes
+    if input_path.exists() and not check_failed:
+        print(f"✅ All checks passed. Passing {input_path}")
+        return input_path
+    elif input_path.exists() and check_failed:
+        print(f"⚠️ Data file exists but unit count validation may have failed.")
+        return None  # OR return None depending on strictness
+    else:
+        print(f"❌ Data generation failed")
+        return None
 
 
 
-def count_ling_units(language):
 
-    # Load CSV and language config
-    df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/semantically_similar_texts.csv")
-
-    tokenizer, model = load_charsiu_model()
-    punctuation = {'.', ',', '?', '!'}
-    onsets = get_onsets_ipa(language)
-
-    # Filter rows with respect to language
-    df = df[df["language"] == language].copy()  
-
-    # Result lists
-    ipa_column = []
-    n_phones_column = []
-    n_syllables_column = []
-
-
-    for _, row in tqdm(df.iterrows(), total=len(df), desc=f"🔄 Processing", ncols=80):
-        text = str(row["text"]).strip()
-
-        # IPA transcription and phoneme an syllable count
-        all_ipa = []
-        all_phones = []
-        all_syllables = []
-
-        tokens = text.split()
-
-        if language in ["FRA"]:
-            tokens = merge_clitics(tokens)
-
-        for word in tokens:
-            if word in punctuation: 
-                continue
-
-            # Convert to ipa 
-            cleaned_ipa = generate_ipa(word, language, tokenizer, model)
-
-            if not cleaned_ipa:
-                continue # removal of empty strings
-            all_ipa.append(cleaned_ipa)
-
-            # Tokenize into syllables and phones
-            phones, syllables = syllable_tokenization(cleaned_ipa, onsets)
-            if syllables: 
-                all_syllables.extend(syllables)
-
-            if phones: 
-                all_phones.extend(phones)
-
-        ipa_column.append(all_ipa)
-        n_phones_column.append(len(all_phones))
-        n_syllables_column.append(len(all_syllables))
-
-    # Add to dataframe
-    df["ipa"] = ipa_column
-    df["n_phones"] = n_phones_column
-    df["n_syllables"] = n_syllables_column 
-
-
-    # Save result
-    output_path = "semantically_similar_texts/ling_units_counts.tsv"
-    df.to_csv(output_path, sep="\t", index=False, encoding="utf-8")
-    print(f"✅ Linguistic units counted and saved to: {output_path}")
 
 
 

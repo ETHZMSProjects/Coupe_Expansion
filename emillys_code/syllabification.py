@@ -2,7 +2,8 @@ import os
 import regex as re
 import pickle
 from collections import Counter
-from process_ipa import load_charsiu_model, load_config, parallelize_ipa_generation
+from process_ipa import load_charsiu_model, parallelize_ipa_generation, merge_diphthongs
+from config_loader import load_config
 from tqdm import tqdm
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -14,11 +15,10 @@ def syllable_tokenization_wrapper(args):
     ipa, onsets = args
     return syllable_tokenization(ipa, onsets)
 
-
 # --- Main Processing Function ---
 def parse_to_phones_and_sylls(language):
     """
-    Parses sentences to phonemes and syllables using external phone_tokenization
+    Parses sentences to phonemes and syllables using phone_tokenization
     and CharsiuG2P for syllabification.
 
     Args:
@@ -35,7 +35,8 @@ def parse_to_phones_and_sylls(language):
         
         tqdm.write("📥 Loading corpus data ...")
         text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-
+        text = text[:100]
+        print(f"raw text: {text[:20]}")
 
     except FileNotFoundError as e:
         logging.error(e)
@@ -47,18 +48,26 @@ def parse_to_phones_and_sylls(language):
 
 
     tokenizer, model = load_charsiu_model()
-    onsets = get_onsets_ipa(language)
 
     phonemized_data = []  # list of lists for phonemes
     syllabized_data = []  # list of lists for syllables 
     
     ipa_sentences = parallelize_ipa_generation(text, language, tokenizer, model)
 
-    for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Processing", ncols=80):
+    # Save ipa sentences
+    folder = f"produced_data/{language}"
+    ipa_output_path = f"{folder}/ipa_corpus_{language}.pkl"
+    with open(ipa_output_path, "wb") as f:
+        pickle.dump(ipa_sentences, f)
+
+    # Get syllable boundaries for that language
+    onsets = get_onsets_ipa(language)
+
+    for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Splitting data to phones and syllables", ncols=80):
         sentence_phones = []
         sentence_syllables = []
         
-        inputs = [(ipa, onsets, language, tokenizer, model) for ipa in ipa_sentence]
+        inputs = [(ipa, onsets) for ipa in ipa_sentence]
 
         with ThreadPoolExecutor(max_workers=8) as executor:
             results = list(executor.map(syllable_tokenization_wrapper, inputs))
@@ -70,30 +79,33 @@ def parse_to_phones_and_sylls(language):
         phonemized_data.append(sentence_phones)
         syllabized_data.append(sentence_syllables)
 
+    # Post-processing
+    if language in ['ENG']:
+        syllabized_data = [
+            [merge_diphthongs(word) for word in sentence]
+            for sentence in syllabized_data
+    ]
+        
     # Save results
-    folder = f"produced_data/{language}"
     os.makedirs(f"{folder}/phones", exist_ok=True)
     os.makedirs(f"{folder}/sylls", exist_ok=True)
 
+    print(f"ipa: {ipa_sentences[:20]} ")
+    print(f"phonemized data: {phonemized_data[:20]}")
+    print(f"syllabized data: {syllabized_data[:20]}")
+
     pho_output_path = f"{folder}/phones/phonized_{language}.pkl"
     sylls_output_path = f"{folder}/sylls/syllabified_{language}.pkl"
-    ipa_output_path = f"{folder}/ipa_corpus_{language}.pkl"
 
-
-    with open(f"{pho_output_path}.pkl", "wb") as f:
+    with open(pho_output_path, "wb") as f:
         pickle.dump(phonemized_data, f)
 
-    with open(f"{sylls_output_path}.pkl", "wb") as f:
+    with open(sylls_output_path, "wb") as f:
         pickle.dump(syllabized_data, f)
-
-    with open(f"{ipa_output_path}.pkl", "wb") as f:
-        pickle.dump(ipa_sentences, f)
 
     print(f"✅ Phonemization completed. Data saved to {pho_output_path}.")
     print(f"✅ Syllabification completed. Data saved to {sylls_output_path}.")
 
-
-    
 
 
 def syllable_tokenization(cleaned_ipa, onsets):
@@ -243,8 +255,6 @@ def get_onsets_ipa(language, threshold=.0002):
 
     # Flatten the list of sentences into a single list of words
     text = [word for sentence in ipa_sentences for word in sentence if word]
-
-    print(f"Flat corpus length: {len(text)}")
     
     # All valid ipa vowels
     # see https://www.internationalphoneticassociation.org/content/ipa-vowels
@@ -282,7 +292,6 @@ def get_onsets_ipa(language, threshold=.0002):
 
     # print(f"example onsets: {filtered_onsets[:10]}")
     return filtered_onsets
-
 
 
 def phone_tokenization(word): 

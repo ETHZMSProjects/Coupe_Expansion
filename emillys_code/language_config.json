@@ -4,7 +4,7 @@
     "Columns": ["syll", "freqfilms2"],
     "Syllable Delimiter": "[.-]",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["@", "°", "'"],
+    "Keep Characters": ["@", "°"],
     "espeak Code": "fr",
     "num2words Code": "fr",
     "charsiu Code": "fra",
@@ -16,7 +16,7 @@
     "Columns": ["PhonStrsDISC", "Word Mann"],
     "Syllable Delimiter": "-",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["ː", "@", "°"],
+    "Keep Characters": ["@", "°"],
     "espeak Code": "de",
     "charsiu Code": "deu",
     "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx"
@@ -26,8 +26,9 @@
     "Columns": [],
     "Syllable Delimiter": "[-.]",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["ː", "ˌ", "ˈ", "ˑ"],
+    "Keep Characters": ["ː","ˑ"],
     "espeak Code": "en",
+    "num2words Code": "en",
     "charsiu Code": "eng-us",
     "Coupe Data": "Z:/data/ENG/eng.txt", 
     "Sentence Data": "Z:/data/ENG/en.tok"
