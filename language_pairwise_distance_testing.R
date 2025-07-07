@@ -298,7 +298,7 @@ multiplot <- function(..., plotlist=NULL, cols=1) {
 }
 
 # Save plots
-png(file.path(output_dir, "boxplots.png"), width=1200, height=300, res=150)
+png(file.path(output_dir, "boxplots.png"), width=4800, height=3600, res=300)
 multiplot(plotlist=plot_list, cols=5)
 dev.off()
 
