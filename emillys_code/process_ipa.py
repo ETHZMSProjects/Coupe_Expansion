@@ -13,6 +13,10 @@ from itertools import accumulate
 from config_loader import load_config
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
+import jieba
+import logging
+
+jieba.setLogLevel(logging.WARNING)
 
 
 # --- CharsiuG2P Model Setup ---
@@ -66,8 +70,133 @@ def merge_clitics(tokens, language):
     else:
         return tokens 
     
+def merge_diphthongs(phones):
+    """
+    Merges diphthongs and triphthongs in a list of IPA phones into single tokens for syllabification.
+    Handles English, German, and French diphthongs/triphthongs with proper prioritization.
+    
+    Prioritization:
+    1. Triphthongs (3 phones) first
+    2. Core diphthongs (vowel + vowel) over glide + vowel
+    3. Glide + vowel combinations
+    
+    Args:
+        phones (List[str]): A list of phone-level IPA.
+    
+    Returns:
+        List[str]: A new list with diphthongs/triphthongs merged as single items.
+    """
+    
+    # TRIPHTHONGS: Vowel + Glide + Schwa/Rhotic (highest priority)
+    triphthongs = {
+        # English triphthongs
+        'aɪə', 'aʊə', 'eɪə', 'oʊə', 'ɔɪə',
+        'aɪɚ', 'aʊɚ', 'eɪɚ', 'oʊɚ', 'ɔɪɚ',
+        # English alternative realizations
+        'juə', 'jʊə', 'jɪə',
+        # German (e.g. poetic or dialectal)
+        'aɪə', 'aʊə', 'ɔɪə',
+        # French (in gliding speech)
+        'waɪ', 'waj', 'ɥij', 'ɥiə'
+    }
 
-def merge_diphthongs(word):
+    # CORE DIPHTHONGS: Vowel + Vowel combinations (second priority)
+    core_diphthongs = {
+        # English
+        'eɪ', 'aɪ', 'ɔɪ', 'aʊ', 'oʊ',
+        'ɪə', 'ɛə', 'ʊə', 'ɑə', 'ɔə',
+        'iə', 'uə', 'eə', 'əʊ',
+        'ɪɚ', 'ɛɚ', 'ʊɚ', 'ɔɚ', 'aɚ', 'ɚə',
+
+        # German
+        'aɪ', 'aʊ', 'ɔɪ',
+        'iə', 'eə', 'uə', 'oə', 'øə', 'yə', 'ɔə', 'ɛə', 'ɪə',
+        'øy', 'œy',
+
+        # French
+        'ei', 'ɛi', 'ɔi', 'ui', 'øi', 'ie', 'ye', 'ue',
+        'au', 'eu', 'ɛu', 'ou', 'ɔu', 'œu', 'iu', 'io',
+        'iə', 'uə', 'eə', 'oə', 'ɑə',
+
+        # Common vowel-vowel across languages
+        'ɪi', 'ʊu', 'ɛe', 'ɔo', 'aə'
+    }
+
+    # GLIDE + VOWEL DIPHTHONGS: j/w/ɥ + Vowel (third priority)
+    glide_vowel_diphthongs = {
+        'ja', 'je', 'ji', 'jo', 'ju', 'jɑ', 'jɛ', 'jɪ', 'jɔ', 'jʊ', 'jə', 'jɚ',
+        'wa', 'we', 'wi', 'wo', 'wu', 'wɑ', 'wɛ', 'wɪ', 'wɔ', 'wʊ', 'wə', 'wɚ',
+        'ɥa', 'ɥe', 'ɥi', 'ɥo', 'ɥu', 'ɥy', 'ɥø', 'ɥœ', 'ɥɛ', 'ɥɔ', 'ɥɑ',
+        'jy', 'jø', 'jœ', 'wy', 'wø', 'wœ'
+    }
+
+    # VOWEL + GLIDE DIPHTHONGS: Vowel + j/w (lowest priority)
+    vowel_glide_diphthongs = {
+        'aj', 'ej', 'ij', 'oj', 'uj', 'ɑj', 'ɛj', 'ɪj', 'ɔj', 'ʊj', 'əj', 'ɚj',
+        'aw', 'ew', 'iw', 'ow', 'uw', 'ɑw', 'ɛw', 'ɪw', 'ɔw', 'ʊw', 'əw', 'ɚw',
+        'øyj', 'œyj', 'øyw', 'œyw'
+    }
+
+    
+    merged = []
+    i = 0
+    
+    while i < len(phones):
+        matched = False
+
+        # Attach markers to previous segment
+        if phones[i] in {'ː', 'ˑ'} and merged:
+            merged[-1] += phones[i]
+            i += 1
+            continue
+        
+        # Check triphthongs first (highest priority)
+        if i + 2 < len(phones):
+            candidate = phones[i] + phones[i + 1] + phones[i + 2]
+            if candidate in triphthongs:
+                merged.append(candidate)
+                i += 3
+                matched = True
+                continue
+        
+        # Before merging any diphthong, check if there's a triphthong starting at i+1
+        # that would be broken by merging a diphthong at i
+        if not matched and i + 1 < len(phones):
+            candidate_diphthong = phones[i] + phones[i + 1]
+            
+            # Check if merging this diphthong would prevent a triphthong at i+1
+            should_skip_for_triphthong = False
+            if i + 3 < len(phones):
+                potential_triphthong = phones[i + 1] + phones[i + 2] + phones[i + 3]
+                if potential_triphthong in triphthongs:
+                    should_skip_for_triphthong = True
+            
+            if not should_skip_for_triphthong:
+                # Priority 1: Core diphthongs (vowel + vowel)
+                if candidate_diphthong in core_diphthongs:
+                    merged.append(candidate_diphthong)
+                    i += 2
+                    matched = True
+                # Priority 2: Glide + vowel
+                elif candidate_diphthong in glide_vowel_diphthongs:
+                    merged.append(candidate_diphthong)
+                    i += 2
+                    matched = True
+                # Priority 3: Vowel + glide
+                elif candidate_diphthong in vowel_glide_diphthongs:
+                    merged.append(candidate_diphthong)
+                    i += 2
+                    matched = True
+        
+        # If no match found, keep the single phone
+        if not matched:
+            merged.append(phones[i])
+            i += 1
+    
+    return merged
+    
+
+def merge_diphthongs_post(word):
     """
     Merges diphthongs that have been incorrectly split across two adjacent syllables.
 
@@ -97,6 +226,7 @@ def merge_diphthongs(word):
             if possible_diphthong in diphthongs:
                 merged = left[:-1] + possible_diphthong + right[1:]
                 fixed_word.append(merged)
+                print(f"merged diphtong: {merged}")
                 i += 2
                 continue
         fixed_word.append(word[i])
@@ -121,7 +251,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
     """
     
     # Remove punctuation tokens and flatten
-    punctuation = {'.', ',', '?', '!'}
+    punctuation = {'.', ',', '?', '!', '。'}
     text = [[word for word in sentence if word not in punctuation] for sentence in text]
     text = [[unicodedata.normalize("NFKC", word) for word in sentence]  for sentence in text]
 
@@ -162,14 +292,19 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
 
 def generate_ipa(word_list, language, tokenizer, model):
 
-    espeak = True if language in ['ENG', 'FRA'] else False
+    espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA', 'ESP'] else False
         
     if not word_list:
         return []
     
     # Convert numbers
     word_list= [convert_numbers(word, language) for word in word_list] 
-    word_list = [word for word in word_list if word.strip() not in {"'", "’", "`", ":"}]
+    word_list = [word for word in word_list if word.strip() not in {"'", "’", "`", ":", "。", "?","¿", "...", ":", ";", "«", "»", "-", "–","“", "„","%", "/"}]
+    #print(f"word_list: {word_list}")
+    
+    if language in ['CMN']:
+            word_list = [list(jieba.cut(sentence, cut_all=False)) for sentence in word_list]
+            print(f"jierba: {word_list}")
 
     ###  Use espeak to get IPA
     if espeak: 

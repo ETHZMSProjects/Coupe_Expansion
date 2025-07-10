@@ -55,6 +55,7 @@ def compute_info_rate(info_density, processing_type, language):
 
     # Initialize an empty list to store info_rate values
     info_rate_values = []
+    speech_rate_values = []
 
     # Iterate through each speaker's data
     for _, row in merged_df.iterrows():
@@ -70,12 +71,13 @@ def compute_info_rate(info_density, processing_type, language):
 
         # Calculate speech rate
         speech_rate = n_units / phonationtime
+        speech_rate_values.append(speech_rate)
 
         # Calculate information rate
         info_rate = info_density * speech_rate
         info_rate_values.append(info_rate)
 
-    return info_rate_values
+    return info_rate_values, speech_rate_values
 
 
 

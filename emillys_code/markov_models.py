@@ -93,7 +93,7 @@ class MarkovModel:
         
         input_list is a List of sentences:
         - each sentence is List of words
-        - each word is List of phonemes
+        - each word is List of phonemes, segments or syllables
         
         Example:
         input_list = [
@@ -110,7 +110,7 @@ class MarkovModel:
 
         for sentence in input_list:
             # Flatten sentence to stream of linguistic units
-            sentence_stream = [phoneme for word in sentence for phoneme in word]
+            sentence_stream = [segment for word in sentence for segment in word]
             
             # Generate n-grams if enough units
             if len(sentence_stream) >= self.n:

@@ -5,47 +5,64 @@ from syllabification import parse_to_phones_and_sylls
 import sys
 from config_loader import load_config
 from info_rate import count_ling_units
+import os
 
 
-def update_values_in_csv(language_to_update, value, n, value_type, text_type):
+def update_values_in_csv(language_to_update, value, n, value_type, text_type, processing_type,
+                         round_digits=3):
+    # Validate model type
     model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
     if not model:
         raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
 
-    if value_type == "ID" or value_type == "IR":
-        ling_unit_comparison_column = f"{value_type}_{model}"
-        inter_intra_comparison_column = f"{text_type}_{value_type}_{model}"
-    else:
-        raise ValueError("Invalid value_type. Use 'ID' or 'IR'.")
+    # Validate value_type
+    allowed_types = {"ID", "IR", "SR"}
+    if value_type not in allowed_types:
+        raise ValueError(f"Invalid value_type. Use one of {allowed_types}.")
 
+    # Construct column names
+    ling_unit_column = f"{processing_type}_{value_type}_{model}_esidaine"
+    inter_intra_column = f"{text_type}_{processing_type}_{value_type}_{model}"
 
-    ling_unit_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv')
-    inter_intra_comparison_df = pd.read_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv')
+    # File paths
+    base_path='C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data'
+    ling_file = os.path.join(base_path, 'ling_unit_comparison.csv')
+    inter_intra_file = os.path.join(base_path, 'inter_intra_comparison.csv')
 
-    # Check if the column exists, if not, create it with NaN values
-    if ling_unit_comparison_column not in ling_unit_comparison_df.columns:
-        ling_unit_comparison_df[ling_unit_comparison_column] = np.nan
-    if inter_intra_comparison_column not in inter_intra_comparison_df.columns:
-        inter_intra_comparison_df[inter_intra_comparison_column] = np.nan
+    # Load CSVs
+    unit_df = pd.read_csv(ling_file)
+    inter_intra_df = pd.read_csv(inter_intra_file)
 
+    # Ensure columns exist
+    for df, col in [(unit_df, ling_unit_column), (inter_intra_df, inter_intra_column)]:
+        if col not in df.columns:
+            df[col] = np.nan
 
-    # If value is a list, update info_rate for each speaker of that language
+    # Get relevant rows
+    unit_mask = unit_df['Language'] == language_to_update
+    inter_mask = inter_intra_df['Language'] == language_to_update
+
+    # Ensure matching number of rows (per speaker)
+    ling_indices = unit_df[unit_mask].index
+    inter_indices = inter_intra_df[inter_mask].index
+
     if isinstance(value, list):
-        # Ensure the length of the value list matches the number of speakers for the language
-        language_speakers = ling_unit_comparison_df[ling_unit_comparison_df['Language'] == language_to_update]
-        if len(value) != len(language_speakers):
-            raise ValueError("The length of the value list must match the number of speakers for the specified language.")
+        if len(value) != len(ling_indices):
+            raise ValueError("Length of value list must match number of speakers for the language.")
 
-        for idx, val in zip(language_speakers.index, value):
-            ling_unit_comparison_df.at[idx, ling_unit_comparison_column] = round(val, 3)
-            inter_intra_comparison_df.at[idx, inter_intra_comparison_column] = round(val, 3)
-    else: 
-        ling_unit_comparison_df.loc[ling_unit_comparison_df['Language'] == language_to_update, ling_unit_comparison_column] = value
-        inter_intra_comparison_df.loc[inter_intra_comparison_df['Language'] == language_to_update, inter_intra_comparison_column] = value
+        for idx, val in zip(ling_indices, value):
+            unit_df.at[idx, ling_unit_column] = round(val, round_digits)
+        for idx, val in zip(inter_indices, value):
+            inter_intra_df.at[idx, inter_intra_column] = round(val, round_digits)
 
-    # Save the updated DataFrame to the CSV file
-    ling_unit_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/ling_unit_comparison.csv', index=False)
-    inter_intra_comparison_df.to_csv('C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data/inter_intra_comparison.csv', index=False)
+    else:
+        val = round(value, round_digits)
+        unit_df.loc[unit_mask, ling_unit_column] = val
+        inter_intra_df.loc[inter_mask, inter_intra_column] = val
+
+    # Save updates
+    unit_df.to_csv(ling_file, index=False)
+    inter_intra_df.to_csv(inter_intra_file, index=False)
 
 
 
@@ -75,7 +92,7 @@ def check_data_availability(language, processing_type):
 
     Args:
         language (str): Language code (e.g., 'FRA').
-        processing_type (str): One of 'phones' or 'sylls'.
+        processing_type (str): One of'phones' or 'sylls'.
 
     Returns:
         Path or None: Path to the prepared data file, or None if checks failed.
@@ -107,7 +124,7 @@ def check_data_availability(language, processing_type):
 
 
     ling_unit_count_csv_path = Path(
-        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.tsv"
+        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
     )
 
     check_failed = False

@@ -17,9 +17,11 @@
     "Syllable Delimiter": "-",
     "Phoneme Delimiter": "-",
     "Keep Characters": ["@", "°"],
+    "num2words Code": "de",
     "espeak Code": "de",
     "charsiu Code": "deu",
-    "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx"
+    "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx", 
+    "Sentence Data": "Z:/data/DEU/de.tok"
   },
   {
     "Language": "ENG",
@@ -51,6 +53,7 @@
     "Phoneme Delimiter": "-",
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
     "espeak Code": "vi",
+    "num2words Code": "vi",
     "charsiu Code": "vie",
     "Coupe Data": "Z:/data/VIE/vie.txt"
   },
@@ -77,8 +80,19 @@
   }, 
   {
     "Language": "ESP",
-    "espeak Code": "es", 
+    "espeak Code": "es",
+    "Keep Characters": [], 
+    "num2words Code": "es",
     "charsiu Code": "spa", 
     "Sentence Data": "Z:/data/ESP/es.tok"
+  }, 
+  {
+    "Language": "ITA",
+    "espeak Code": "it", 
+    "Keep Characters": [],
+    "num2words Code": "it",
+    "Sentence Data": "Z:/data/ITA/it.tok"
   }
 ]
+
+
