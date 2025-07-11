@@ -7,7 +7,8 @@ from tqdm import tqdm
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from nltk.tokenize import word_tokenize
+
+logging.basicConfig(level=logging.INFO)
 
 
 def compute_info_rate(info_density, processing_type, language):
@@ -141,4 +142,4 @@ def count_ling_units(language):
         combined_df = df_lang
 
     combined_df.to_csv(output_path, sep="\t", index=False, encoding="utf-8")
-    print(f"✅ Linguistic units counted and saved to: {output_path}")
+    logging.info(f"✅ Linguistic units counted and saved to: {output_path}")

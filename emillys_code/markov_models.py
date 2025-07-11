@@ -1,10 +1,12 @@
-import nltk
 from nltk.util import ngrams
 from collections import defaultdict
 from math import log2
 import os
 import pickle
 import warnings
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 class MarkovModel: 
@@ -117,7 +119,7 @@ class MarkovModel:
                 sentence_ngrams = list(ngrams(sentence_stream, self.n))
                 ngrams_per_sentence.extend(sentence_ngrams)
 
-        print(f"ngram examples: {ngrams_per_sentence[:5]}")
+        logging.info(f"ngram examples: {ngrams_per_sentence[:5]}")
         return ngrams_per_sentence
 
     def generate_ngrams_for_words(self, input_list):
@@ -147,7 +149,7 @@ class MarkovModel:
             if len(word) >= self.n: 
                 word_ngrams  = list(ngrams(word, self.n))
                 ngrams_per_word.extend(word_ngrams)
-        print(f"ngram examples: {ngrams_per_word[:5]}")
+        logging.debug(f"ngram examples: {ngrams_per_word[:5]}")
         return ngrams_per_word
 
     def save_model(self, language, processing_type, text_type):

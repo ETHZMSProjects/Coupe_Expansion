@@ -6,8 +6,8 @@ from process_ipa import load_charsiu_model, parallelize_ipa_generation, merge_di
 from config_loader import load_config
 from tqdm import tqdm
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from joblib import Parallel, delayed
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,10 +35,8 @@ def parse_to_phones_and_sylls(language):
         
         tqdm.write("📥 Loading corpus data ...")
         text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-        text = text[:100]
-        #print(f"raw text: {text[:20]}")
+        text = text[:100]    
         
-
     except FileNotFoundError as e:
         logging.error(e)
         raise 
@@ -61,56 +59,40 @@ def parse_to_phones_and_sylls(language):
     ipa_output_path = f"{folder}/ipa_corpus_{language}.pkl"
     with open(ipa_output_path, "wb") as f:
         pickle.dump(ipa_sentences, f)
-
+    
     # Get syllable boundaries for that language
     onsets = get_onsets_ipa(language)
-    print(f"onsets: {onsets}")
+    logging.info(f"onsets: {onsets}")
 
     for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Splitting data to phones and syllables", ncols=80):
-        sentence_phones = []
-        sentence_syllables = []
+        inputs = [(ipa, onsets) for ipa in ipa_sentence]  # build argument pairs
+        results = Parallel(n_jobs=-1)(
+            delayed(syllable_tokenization_wrapper)(args) for args in inputs
+        )
         
-        inputs = [(ipa, onsets) for ipa in ipa_sentence]
-
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            results = list(executor.map(syllable_tokenization_wrapper, inputs))
-
-        for (phones, sylls) in results:
-            sentence_phones.append(phones)
-            sentence_syllables.append(sylls)
-
-        phonemized_data.append(sentence_phones)
-        syllabized_data.append(sentence_syllables)
-
-    # Post-processing
-    """if language in ['ENG']:
-        syllabized_data = [
-            [merge_diphthongs_post(word) for word in sentence]
-            for sentence in syllabized_data
-    ]"""
+        phones, sylls = zip(*results)
+        phonemized_data.append(list(phones))
+        syllabized_data.append(list(sylls))
 
     if any(any(sublist) for sublist in ipa_sentences): 
         # Save results
         os.makedirs(f"{folder}/phones", exist_ok=True)
         os.makedirs(f"{folder}/sylls", exist_ok=True)
 
-        print(f"text: {text[:20]}")
-        print(f"ipa: {ipa_sentences[:20]} ")
-        print(f"phonemized data: {phonemized_data[:20]}")
-        print(f"syllabized data: {syllabized_data[:20]}")
-
-        pho_output_path = f"{folder}/phones/phonized_{language}.pkl"
-        sylls_output_path = f"{folder}/sylls/syllabified_{language}.pkl"
+        logging.info(f"text: {text[:20]}")
+        logging.info(f"ipa: {ipa_sentences[:20]}")
+        logging.info(f"phonemized data: {phonemized_data[:20]}")
+        logging.info(f"syllabized data: {syllabized_data[:20]}")
         
-        with open(pho_output_path, "wb") as f:
+        with open(f"{folder}/phonized_{language}.pkl", "wb") as f:
             pickle.dump(phonemized_data, f)
-
-        with open(sylls_output_path, "wb") as f:
+        
+        with open(f"{folder}/syllabified_{language}.pkl", "wb") as f:
             pickle.dump(syllabized_data, f)
 
-        print(f"✅ Tokenization into phones and syllables completed. Data saved to {folder}.")
+        logging.info(f"✅ Tokenization into phones and syllables completed. Data saved to {folder}.")
 
-    else: print(f"⚠️ Failed to parse to phones and syllables")
+    else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
 
 
 

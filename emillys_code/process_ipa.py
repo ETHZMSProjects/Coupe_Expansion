@@ -9,15 +9,21 @@ import torch
 from transformers import T5ForConditionalGeneration, AutoTokenizer
 from num2words import num2words
 from more_itertools import chunked
-from itertools import accumulate
 from config_loader import load_config
 import unicodedata
-from concurrent.futures import ThreadPoolExecutor
 import jieba
 import logging
+from joblib import Parallel, delayed, Memory
+from more_itertools import chunked
 
 jieba.setLogLevel(logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
+# Caching (optional)
+memory = Memory("cache_dir", verbose=1)
+@memory.cache
+def get_ipa_espeak_cached(word, espeak_code):
+    return get_ipa_espeak(word, espeak_code)
 
 # --- CharsiuG2P Model Setup ---
 # Load model and tokenizer once to avoid repeated loading
@@ -36,9 +42,9 @@ def load_charsiu_model():
         # Move model to GPU if available
         if torch.cuda.is_available():
             charsiu_model.to('cuda')
-            print(f"{CHARSIU_MODEL_NAME} moved to GPU.")
+            logging.info(f"{CHARSIU_MODEL_NAME} moved to GPU.")
         else:
-            print(f"{CHARSIU_MODEL_NAME} running on CPU.")
+            logging.info(f"{CHARSIU_MODEL_NAME} running on CPU.")
     return charsiu_tokenizer, charsiu_model
 
 
@@ -49,7 +55,7 @@ def convert_numbers(word, language):
         try:
             word = re.sub(r'\d+', lambda x: num2words(int(x.group()), lang=num2word_code), word)
         except NotImplementedError:
-            print(f"Language '{language}' not supported by num2words. Skipping number conversion.")
+            logging.warning(f"Language '{language}' not supported by num2words. Skipping number conversion.")
     return word
 
 
@@ -226,7 +232,7 @@ def merge_diphthongs_post(word):
             if possible_diphthong in diphthongs:
                 merged = left[:-1] + possible_diphthong + right[1:]
                 fixed_word.append(merged)
-                print(f"merged diphtong: {merged}")
+                logging.debug(f"merged diphtong: {merged}")
                 i += 2
                 continue
         fixed_word.append(word[i])
@@ -250,8 +256,8 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
         list of list of str: Sentences as lists of IPA transcriptions.
     """
     
-    # Remove punctuation tokens and flatten
-    punctuation = {'.', ',', '?', '!', '。'}
+    # Remove punctuation tokens, normalize and flatten
+    punctuation = {'.', ',', '?', '!'}
     text = [[word for word in sentence if word not in punctuation] for sentence in text]
     text = [[unicodedata.normalize("NFKC", word) for word in sentence]  for sentence in text]
 
@@ -273,11 +279,11 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
     if not all(ipa_flat):
         for w, ipa in zip(flat_words, ipa_flat):
             if not ipa:
-                print(f"⚠️ Failed to generate IPA for word: {w}")
+                logging.warning(f"⚠️ Failed to generate IPA for word: {w}")
         return [], []
 
     # Reconstruct sentence structure
-    indices = list(accumulate(sentence_lengths))
+    indices = list(pd.Series(sentence_lengths).cumsum())
     start = 0
     ipa_sentences = []
     for end in indices:
@@ -285,7 +291,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
         start = end
 
     #for orig, ipa in zip(text, ipa_sentences):
-        #print(f"{orig} → {ipa}")
+        #logging.debug(f"{orig} → {ipa}")
 
     return ipa_sentences
 
@@ -298,19 +304,19 @@ def generate_ipa(word_list, language, tokenizer, model):
         return []
     
     # Convert numbers
-    word_list= [convert_numbers(word, language) for word in word_list] 
-    word_list = [word for word in word_list if word.strip() not in {"'", "’", "`", ":", "。", "?","¿", "...", ":", ";", "«", "»", "-", "–","“", "„","%", "/"}]
-    #print(f"word_list: {word_list}")
+    word_list = [convert_numbers(word, language) for word in word_list]
+    word_list = [word for word in word_list if word.strip() not in {"'", "’", "", ":", "。", "?","¿", "...", ":", ";", "«", "»", "-", "–","“", "„","%", "/"}]
     
     if language in ['CMN']:
             word_list = [list(jieba.cut(sentence, cut_all=False)) for sentence in word_list]
-            print(f"jierba: {word_list}")
+            logging.debug(f"jierba: {word_list}")
 
     ###  Use espeak to get IPA
     if espeak: 
         espeak_code = load_config(language, 'espeak Code')
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            raw_ipa = list(executor.map(lambda w: get_ipa_espeak(w, espeak_code), word_list))
+        raw_ipa = Parallel(n_jobs=-1)(
+            delayed(get_ipa_espeak_cached)(w, espeak_code) for w in word_list
+        )
         ipa_results = [clean_ipa(ipa, True, '', language) for ipa in raw_ipa]
     
     else: 
@@ -422,5 +428,5 @@ def get_ipa_espeak(word, espeak_code):
         )
         return result.stdout.strip()
     except Exception as e:
-        print(f"espeak-ng failed on word '{word}': {e}")
+        logging.error(f"espeak-ng failed on word '{word}': {e}")
         return ""

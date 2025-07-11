@@ -6,6 +6,9 @@ import sys
 from config_loader import load_config
 from info_rate import count_ling_units
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 def update_values_in_csv(language_to_update, value, n, value_type, text_type, processing_type,
@@ -25,7 +28,7 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
     inter_intra_column = f"{text_type}_{processing_type}_{value_type}_{model}"
 
     # File paths
-    base_path='C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data'
+    base_path ='C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data'
     ling_file = os.path.join(base_path, 'ling_unit_comparison.csv')
     inter_intra_file = os.path.join(base_path, 'inter_intra_comparison.csv')
 
@@ -37,6 +40,51 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
     for df, col in [(unit_df, ling_unit_column), (inter_intra_df, inter_intra_column)]:
         if col not in df.columns:
             df[col] = np.nan
+
+    # Take values from Coupé et. al data
+    original_df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/InfoRateData.csv", sep="\t")
+
+    unit_languages = unit_df['Language'].to_list()
+    inter_intra_languages = inter_intra_df['Language'].to_list()
+
+    # Create a list of (name, DataFrame object) pairs to update
+    dfs_to_update = []
+    if language_to_update not in unit_languages:
+        dfs_to_update.append(("unit_df", unit_df))
+    if language_to_update not in inter_intra_languages:
+        dfs_to_update.append(("inter_intra_df", inter_intra_df))
+
+    # Filter speaker + passage data from Coupé et al.
+    filtered_speaker_data = original_df[original_df['Language'] == language_to_update]
+    speaker_passages = filtered_speaker_data[['Speaker', 'Text']].drop_duplicates()
+
+    # Apply to each relevant DataFrame
+    for name, df in dfs_to_update:
+        new_rows = []
+
+        for _, row_data in speaker_passages.iterrows():
+            speaker_id = row_data['Speaker']
+            passage = row_data['Text']
+
+            row = {
+                'Speaker': speaker_id,
+                'Language': language_to_update,
+                'Text': passage
+            }
+
+            for col in df.columns:
+                if col not in row:
+                    row[col] = np.nan
+
+            new_rows.append(row)
+
+        updated_df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
+
+        # Assign back to the appropriate variable
+        if name == "unit_df":
+            unit_df = updated_df
+        elif name == "inter_intra_df":
+            inter_intra_df = updated_df
 
     # Get relevant rows
     unit_mask = unit_df['Language'] == language_to_update
@@ -60,7 +108,7 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
         unit_df.loc[unit_mask, ling_unit_column] = val
         inter_intra_df.loc[inter_mask, inter_intra_column] = val
 
-    # Save updates
+    # Save the updated dataframes
     unit_df.to_csv(ling_file, index=False)
     inter_intra_df.to_csv(inter_intra_file, index=False)
 
@@ -115,8 +163,6 @@ def check_data_availability(language, processing_type):
 
     if not input_path.exists():
         print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
-
-        data_path = load_config(language, 'Sentence Data')
         print(f"👉 Please run parse_to_phones_and_sylls('{language}') to generate the required data.")
         sys.stdout.flush() #  Force the print to show up immediately
         if not ask_question(f"❓ Do you want to run it now? [y/n]:", parse_to_phones_and_sylls, language): 
@@ -170,7 +216,7 @@ def check_data_availability(language, processing_type):
         print(f"⚠️ Data file exists but unit count validation may have failed.")
         return None  # OR return None depending on strictness
     else:
-        print(f"❌ Data generation failed")
+        logging.error(f"❌ Data generation failed")
         return None
 
 
