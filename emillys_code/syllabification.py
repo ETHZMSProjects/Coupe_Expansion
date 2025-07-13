@@ -3,11 +3,12 @@ import regex as re
 import pickle
 from collections import Counter
 from process_ipa import load_charsiu_model, parallelize_ipa_generation, merge_diphthongs
-from config_loader import load_config
 from tqdm import tqdm
 import logging
 from pathlib import Path
 from joblib import Parallel, delayed
+from functools import partial
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,7 +17,7 @@ def syllable_tokenization_wrapper(args):
     return syllable_tokenization(ipa, onsets)
 
 # --- Main Processing Function ---
-def parse_to_phones_and_sylls(language):
+def parse_to_phones_and_sylls(language, config_dict):
     """
     Parses sentences to phonemes and syllables using phone_tokenization
     and CharsiuG2P for syllabification.
@@ -27,7 +28,7 @@ def parse_to_phones_and_sylls(language):
 
     # Load tokenized text (assuming this is orthographic text, not IPA)
     #input_path = f"produced_data/{language}/{language}_original_sentences.pkl"
-    input_path = load_config(language, 'Sentence Data')
+    input_path = config_dict['Sentence Data']
     
     try:
         if not os.path.exists(input_path):
@@ -35,7 +36,7 @@ def parse_to_phones_and_sylls(language):
         
         tqdm.write("📥 Loading corpus data ...")
         text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-        text = text[:100]    
+        #text = text[:100]    
         
     except FileNotFoundError as e:
         logging.error(e)
@@ -51,7 +52,8 @@ def parse_to_phones_and_sylls(language):
     phonemized_data = []  # list of lists for phonemes
     syllabized_data = []  # list of lists for syllables 
     
-    ipa_sentences = parallelize_ipa_generation(text, language, tokenizer, model)
+    parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
+    ipa_sentences = parallel_ipa(text)
 
     # Save ipa sentences
     folder = f"produced_data/{language}"
@@ -84,10 +86,10 @@ def parse_to_phones_and_sylls(language):
         logging.info(f"phonemized data: {phonemized_data[:20]}")
         logging.info(f"syllabized data: {syllabized_data[:20]}")
         
-        with open(f"{folder}/phonized_{language}.pkl", "wb") as f:
+        with open(f"{folder}/phones/phonized_{language}.pkl", "wb") as f:
             pickle.dump(phonemized_data, f)
         
-        with open(f"{folder}/syllabified_{language}.pkl", "wb") as f:
+        with open(f"{folder}/sylls/syllabified_{language}.pkl", "wb") as f:
             pickle.dump(syllabized_data, f)
 
         logging.info(f"✅ Tokenization into phones and syllables completed. Data saved to {folder}.")

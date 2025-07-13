@@ -3,18 +3,17 @@ import re
 import string
 import subprocess
 import unicodedata
-import unicodedata
 import regex as re
 import torch
 from transformers import T5ForConditionalGeneration, AutoTokenizer
 from num2words import num2words
 from more_itertools import chunked
-from config_loader import load_config
 import unicodedata
 import jieba
 import logging
 from joblib import Parallel, delayed, Memory
 from more_itertools import chunked
+from functools import partial
 
 jieba.setLogLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
@@ -48,15 +47,39 @@ def load_charsiu_model():
     return charsiu_tokenizer, charsiu_model
 
 
-def convert_numbers(word, language): 
-    num2word_code = load_config(language, "num2words Code")
-    if language not in ["YUE", "CMN", "VIE"]: 
-        # convert numbers to words
+# Compile regex once
+DIGIT_RE = re.compile(r'\d+')
+
+def convert_numbers(word_list, language, config_dict): 
+    """
+    Converts numeric digits in words to their spoken form using num2words,
+    only for supported languages and only when digits are present.
+
+    Args:
+        word_list (List[str]): List of words to process.
+        language (str): ISO language code (e.g., 'ENG').
+        config_dict (dict): Dictionary containing num2words language code.
+
+    Returns:
+        List[str]: Words with numbers converted to words where applicable.
+    """
+    num2word_code = config_dict["num2words Code"]
+
+    if language in ["YUE", "CMN", "VIE"]: 
+        return word_list  # Skip number conversion for these languages
+
+    def replace_digits(word):
         try:
-            word = re.sub(r'\d+', lambda x: num2words(int(x.group()), lang=num2word_code), word)
+            return DIGIT_RE.sub(lambda x: num2words(int(x.group()), lang=num2word_code), word)
         except NotImplementedError:
             logging.warning(f"Language '{language}' not supported by num2words. Skipping number conversion.")
-    return word
+            return word
+        except Exception as e:
+            logging.error(f"Error converting number in word '{word}': {e}")
+            return word
+
+    # Only process words that contain digits
+    return [replace_digits(w) if any(c.isdigit() for c in w) else w for w in word_list]
 
 
 def merge_clitics(tokens, language):
@@ -241,7 +264,7 @@ def merge_diphthongs_post(word):
 
 
 
-def parallelize_ipa_generation(text, language, tokenizer, model):
+def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
     """
     Flattens sentences into words, batch-generates IPA using G2P, 
     and reconstructs the sentence structure.
@@ -264,16 +287,20 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
     flat_words = []
     sentence_lengths = []
 
+    if language in ["FRA", "ENG"]:
+        merge = partial(merge_clitics, language=language)
+    else:
+        merge = lambda x: x # do nothing
+
     for sentence in text:
-        if language in ["FRA", "ENG"]:
-            sentence = merge_clitics(sentence, language)
+        sentence = merge(sentence)
         sentence_lengths.append(len(sentence))
         flat_words.extend(sentence)
 
     print("🔠 Converting to IPA...")
 
     # Batch IPA generation
-    ipa_flat = generate_ipa(flat_words, language, tokenizer, model)
+    ipa_flat = generate_ipa(flat_words, language, tokenizer, model, config_dict)
 
     # Sanity check
     if not all(ipa_flat):
@@ -296,7 +323,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model):
     return ipa_sentences
 
 
-def generate_ipa(word_list, language, tokenizer, model):
+def generate_ipa(word_list, language, tokenizer, model, config_dict):
 
     espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA', 'ESP'] else False
         
@@ -304,8 +331,12 @@ def generate_ipa(word_list, language, tokenizer, model):
         return []
     
     # Convert numbers
-    word_list = [convert_numbers(word, language) for word in word_list]
-    word_list = [word for word in word_list if word.strip() not in {"'", "’", "", ":", "。", "?","¿", "...", ":", ";", "«", "»", "-", "–","“", "„","%", "/"}]
+    word_list = convert_numbers(word_list, language, config_dict)
+
+    # Normalize Unicode (NFC or NFKC), strip punctuation etc.
+    word_list = [word for word in word_list
+        if word.strip() not in {"'", "’", "", ":", "。", "?", "¿", "...", ";", "«", "»", "-", "–", "“", "„", "%", "/"}
+    ]
     
     if language in ['CMN']:
             word_list = [list(jieba.cut(sentence, cut_all=False)) for sentence in word_list]
@@ -313,18 +344,26 @@ def generate_ipa(word_list, language, tokenizer, model):
 
     ###  Use espeak to get IPA
     if espeak: 
-        espeak_code = load_config(language, 'espeak Code')
-        raw_ipa = Parallel(n_jobs=-1)(
-            delayed(get_ipa_espeak_cached)(w, espeak_code) for w in word_list
+        espeak_code = config_dict['espeak Code']
+
+        # Chunks the word list into batches of 64 for subprocess efficiency
+        word_list = [unicodedata.normalize("NFC", w) for w in word_list]
+        word_chunks = list(chunked(word_list, 128))
+
+        results_nested = Parallel(n_jobs=4)(
+            delayed(get_espeak_ipa_batch)(chunk, espeak_code) for chunk in word_chunks
         )
-        ipa_results = [clean_ipa(ipa, True, '', language) for ipa in raw_ipa]
+        raw_ipa = [ipa for chunk in results_nested for ipa in chunk]
+
+        clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
+        ipa_results = [clean(ipa) for ipa in raw_ipa]
     
     else: 
          ### Use g2p model to generate IPA
 
         # CharsiuG2P requires a language prefix and a space after the colon
         # Example: "<eng>: hello" or "<fra>: bonjour"
-        charsiu_code = load_config(language, 'charsiu Code')
+        charsiu_code = config_dict['charsiu Code']
         tagged_words = [f"<{charsiu_code}>: {word.lower()}" for word in word_list] 
         ipa_results = []
         model.eval()
@@ -334,7 +373,7 @@ def generate_ipa(word_list, language, tokenizer, model):
             model = model.to('cuda')
 
         with torch.no_grad():
-            for batch in chunked(tagged_words, 64):
+            for batch in chunked(tagged_words, 128):
                 encoded = tokenizer(batch, padding=True, return_tensors='pt')
                 if torch.cuda.is_available():
                     encoded = {k: v.to('cuda') for k, v in encoded.items()}
@@ -346,7 +385,7 @@ def generate_ipa(word_list, language, tokenizer, model):
                     do_sample=False
                 )
                 decoded = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)
-                cleaned_batch = [clean_ipa(ipa, True, '', language) for ipa in decoded]
+                cleaned_batch = [clean_ipa(ipa, True, '') for ipa in decoded]
                 ipa_results.extend([ipa for ipa in cleaned_batch if ipa])
 
     return ipa_results
@@ -355,19 +394,13 @@ def generate_ipa(word_list, language, tokenizer, model):
 # Regex for grapheme clusters
 GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
 
-def clean_ipa(ipa_string, as_string, delimiter, language):
+def clean_ipa(ipa_string, as_string, delimiter, config_dict):
     """
     Cleans a given IPA string by removing non-phonemic characters,
     while preserving delimiter and language-specific meaningful IPA symbols.
     """
+    keep_chars = set(config_dict["Keep Characters"]) 
 
-    # Define language-specific meaningful symbols to preserve
-    config_df = pd.read_json("C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/language_config.json")
-    config_df.set_index("Language", inplace=True)
-    lang_cfg = config_df.loc[language]
-    keep_chars = set(lang_cfg["Keep Characters"]) 
-
-    
     if isinstance(ipa_string, list):
         ipa_string = " ".join(ipa_string)
     
@@ -396,12 +429,12 @@ def clean_ipa(ipa_string, as_string, delimiter, language):
         '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：' , 'ʼ', 'ʹ', 'ʽ'
     } - PRESERVE  # Subtract preserved symbols
 
+    STRIP_PATTERN = re.compile("|".join(map(re.escape, STRIP_CHARS)))
+
     # Clean the segments
     cleaned_as_list = []
     for seg in segments:
-        seg = re.sub(r"\(.*?\)", "", seg)  # remove weird parenthesis artifacts
-        if seg in STRIP_CHARS:
-            continue
+        seg = STRIP_PATTERN.sub("", seg) 
         if any(unicodedata.category(char).startswith('S') for char in seg):  # Symbol characters
             continue
         seg = seg.strip() # remove trailing spaces and empty segments
@@ -412,13 +445,13 @@ def clean_ipa(ipa_string, as_string, delimiter, language):
         
     return "".join(cleaned_as_list) if as_string else cleaned_as_list
 
+def get_espeak_ipa_batch(chunk, espeak_code):
+    """Run espeak-ng on a batch of words, one at a time."""
+    return [get_ipa_espeak(word, espeak_code) for word in chunk]
 
 def get_ipa_espeak(word, espeak_code):
     """Get IPA transcription from espeak-ng."""
-
-    # normalize the word
-    word = unicodedata.normalize("NFC", word)
-    # remove punctuation
+    # Remove punctuation
     no_punct = word.strip(string.punctuation)
 
     try:

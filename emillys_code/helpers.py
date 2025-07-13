@@ -3,12 +3,26 @@ from pathlib import Path
 import numpy as np
 from syllabification import parse_to_phones_and_sylls
 import sys
-from config_loader import load_config
 from info_rate import count_ling_units
 import os
 import logging
+from functools import partial
 
 logging.basicConfig(level=logging.INFO)
+
+def load_config(language):
+    config_path = Path("language_config.json")
+    config_df = pd.read_json(config_path)
+    config_df.set_index("Language", inplace=True)
+    config_dict = {}
+
+    try:
+        lang_cfg = config_df.loc[language]
+        config_dict = lang_cfg.to_dict()
+        return config_dict
+    except KeyError:
+        print(f"Language '{language}' is not supported in language_config.json.")
+        return None
 
 
 def update_values_in_csv(language_to_update, value, n, value_type, text_type, processing_type,
@@ -28,7 +42,7 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
     inter_intra_column = f"{text_type}_{processing_type}_{value_type}_{model}"
 
     # File paths
-    base_path ='C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/produced_data'
+    base_path ='produced_data'
     ling_file = os.path.join(base_path, 'ling_unit_comparison.csv')
     inter_intra_file = os.path.join(base_path, 'inter_intra_comparison.csv')
 
@@ -134,7 +148,7 @@ def ask_question(question, function_to_run, language):
 
 
 
-def check_data_availability(language, processing_type): 
+def check_data_availability(language, processing_type, config_dict): 
     """
     Checks whether required processed data and unit count data are available for a given language.
 
@@ -160,17 +174,19 @@ def check_data_availability(language, processing_type):
     input_path = folder / filename
 
     # Check if the input file exists
-
     if not input_path.exists():
         print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
         print(f"👉 Please run parse_to_phones_and_sylls('{language}') to generate the required data.")
         sys.stdout.flush() #  Force the print to show up immediately
-        if not ask_question(f"❓ Do you want to run it now? [y/n]:", parse_to_phones_and_sylls, language): 
+        if not ask_question(
+            f"❓ Run parse_to_phones_and_sylls('{language}') now? [y/n]: ",
+            partial(parse_to_phones_and_sylls, config_dict=config_dict),
+            language
+        ):
             return None               
 
 
-    ling_unit_count_csv_path = Path(
-        "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+    ling_unit_count_csv_path = Path("semantically_similar_texts/ling_units_counts.csv"
     )
 
     check_failed = False
@@ -202,7 +218,11 @@ def check_data_availability(language, processing_type):
                 check_failed = True
     
     if check_failed:
-        if not ask_question(f"❓ Do you want to run it now? [y/n]:", count_ling_units, language): 
+        if not ask_question(
+            f"❓ Run count_ling_units('{language}') now? [y/n]: ",
+            partial(count_ling_units, config=config_dict),
+            language
+        ):
             return None
         else: 
             if ling_unit_count_csv_path.is_file():

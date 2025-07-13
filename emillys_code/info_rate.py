@@ -24,8 +24,8 @@ def compute_info_rate(info_density, processing_type, language):
         float: Information rate per second
     """
 
-    counts_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
-    speech_df_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/AutomaticSylDetect.csv"
+    counts_df_path = "semantically_similar_texts/ling_units_counts.csv"
+    speech_df_path = "../AutomaticSylDetect.csv"
 
  
     try:
@@ -82,9 +82,9 @@ def compute_info_rate(info_density, processing_type, language):
 
 
 
-def count_ling_units(language):
-    input_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/semantically_similar_texts.csv"
-    output_path = "C:/Users/emill/Documents/GitHub/Coupe_Expansion/emillys_code/semantically_similar_texts/ling_units_counts.csv"
+def count_ling_units(language, config = None):
+    input_path = "semantically_similar_texts/semantically_similar_texts.csv"
+    output_path = "semantically_similar_texts/ling_units_counts.csv"
 
     try:
         if not os.path.exists(input_path):
