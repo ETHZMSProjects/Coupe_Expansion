@@ -14,6 +14,10 @@ import logging
 from joblib import Parallel, delayed, Memory
 from more_itertools import chunked
 from functools import partial
+import os 
+
+# ensure that espeak-ng is discoverable for all subprocesses during that session.
+os.environ["PATH"] = "/home/emilly/.local/bin:" + os.environ["PATH"]
 
 jieba.setLogLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
@@ -38,12 +42,10 @@ def load_charsiu_model():
     if charsiu_model is None or charsiu_tokenizer is None:
         charsiu_tokenizer = AutoTokenizer.from_pretrained('google/byt5-small')
         charsiu_model = T5ForConditionalGeneration.from_pretrained(CHARSIU_MODEL_NAME)
-        # Move model to GPU if available
-        if torch.cuda.is_available():
+        """if torch.cuda.is_available():
             charsiu_model.to('cuda')
             logging.info(f"{CHARSIU_MODEL_NAME} moved to GPU.")
-        else:
-            logging.info(f"{CHARSIU_MODEL_NAME} running on CPU.")
+        logging.info(f"{CHARSIU_MODEL_NAME} running on CPU.")"""
     return charsiu_tokenizer, charsiu_model
 
 
@@ -300,19 +302,14 @@ def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
     print("🔠 Converting to IPA...")
 
     # Batch IPA generation
-    ipa_flat = generate_ipa(flat_words, language, tokenizer, model, config_dict)
-
-    # Sanity check
-    if not all(ipa_flat):
-        for w, ipa in zip(flat_words, ipa_flat):
-            if not ipa:
-                logging.warning(f"⚠️ Failed to generate IPA for word: {w}")
-        return [], []
+    ipa_flat, updated_word_list = generate_ipa(flat_words, language, tokenizer, model, config_dict)
 
     # Reconstruct sentence structure
     indices = list(pd.Series(sentence_lengths).cumsum())
     start = 0
     ipa_sentences = []
+
+
     for end in indices:
         ipa_sentences.append(ipa_flat[start:end])
         start = end
@@ -335,7 +332,7 @@ def generate_ipa(word_list, language, tokenizer, model, config_dict):
 
     # Normalize Unicode (NFC or NFKC), strip punctuation etc.
     word_list = [word for word in word_list
-        if word.strip() not in {"'", "’", "", ":", "。", "?", "¿", "...", ";", "«", "»", "-", "–", "“", "„", "%", "/"}
+        if word.strip() not in {"'", "’", "", ":", "。", "?", "¿", "...", ";", "«", "»", "-", "–", "“", "„", "%", "/", '"'}
     ]
     
     if language in ['CMN']:
@@ -350,10 +347,17 @@ def generate_ipa(word_list, language, tokenizer, model, config_dict):
         word_list = [unicodedata.normalize("NFC", w) for w in word_list]
         word_chunks = list(chunked(word_list, 128))
 
-        results_nested = Parallel(n_jobs=4)(
+        """results_nested = Parallel(n_jobs=4)(
             delayed(get_espeak_ipa_batch)(chunk, espeak_code) for chunk in word_chunks
-        )
+        )"""
+
+        results_nested = [get_espeak_ipa_batch(chunk, espeak_code) for chunk in word_chunks]
+
         raw_ipa = [ipa for chunk in results_nested for ipa in chunk]
+
+        for word, ipa in zip(word_list, raw_ipa):
+            if not ipa:
+                print(f"🧪 EMPTY: '{word}' → '{ipa}'")
 
         clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
         ipa_results = [clean(ipa) for ipa in raw_ipa]
@@ -388,7 +392,10 @@ def generate_ipa(word_list, language, tokenizer, model, config_dict):
                 cleaned_batch = [clean_ipa(ipa, True, '') for ipa in decoded]
                 ipa_results.extend([ipa for ipa in cleaned_batch if ipa])
 
-    return ipa_results
+    # filter out empty entries in both the original and the ipa word list
+    filtered = [(w, ipa) for w, ipa in zip(word_list, ipa_results) if ipa]
+    word_list, ipa_results = zip(*filtered)
+    return list(ipa_results), list(word_list)
 
 
 # Regex for grapheme clusters
@@ -451,15 +458,34 @@ def get_espeak_ipa_batch(chunk, espeak_code):
 
 def get_ipa_espeak(word, espeak_code):
     """Get IPA transcription from espeak-ng."""
-    # Remove punctuation
-    no_punct = word.strip(string.punctuation)
+
+    raw = word
+    word = unicodedata.normalize("NFKC", word)
+    word = word.strip(string.punctuation + "’‘“”").strip().lower()
+
+    if not word:
+        # Skip this word or sign 
+        #logging.warning(f"⚠️ Word became empty after cleaning: '{raw}'")
+        return ""
 
     try:
         result = subprocess.run(
-            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', no_punct.lower()],
+            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', word.lower()],
             capture_output=True, text=True
         )
-        return result.stdout.strip()
+        if result.returncode != 0:
+            #logging.error(f"❌ espeak-ng returned error for '{word}': {result.stderr.strip()}")
+            print(f"❌ espeak-ng returned error for '{word}': {result.stderr.strip()}")
+            return ""
+
+        ipa = result.stdout.strip()
+        if not ipa:
+            #logging.warning(f"⚠️ espeak-ng gave empty output for '{word}'")
+            print(f"⚠️ espeak-ng gave empty output for '{word}'")
+            return ""
+
+        return ipa
+
     except Exception as e:
-        logging.error(f"espeak-ng failed on word '{word}': {e}")
+        logging.error(f"❌ espeak-ng crashed on word '{word}': {e}")
         return ""

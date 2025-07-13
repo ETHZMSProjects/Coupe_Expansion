@@ -36,7 +36,7 @@ def parse_to_phones_and_sylls(language, config_dict):
         
         tqdm.write("📥 Loading corpus data ...")
         text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-        #text = text[:100]    
+        text = text[:1000]    
         
     except FileNotFoundError as e:
         logging.error(e)
@@ -234,7 +234,7 @@ def sonori_syllabify(stressed_ipa):
     return []
 
 
-def get_onsets_ipa(language, threshold=.0002):
+def get_onsets_ipa(language, threshold=.0001):
     '''
     Takes text in ipa and yields list of onsets and words
 
@@ -249,7 +249,9 @@ def get_onsets_ipa(language, threshold=.0002):
         ipa_sentences = pickle.load(f)
 
     # Flatten the list of sentences into a single list of words
+    # skips invalid words
     text = [word for sentence in ipa_sentences for word in sentence if word]
+    print(f"Total words in IPA corpus: {len(text)}")
     
     ipa_vowels = set([
         # Common monophthongs
@@ -280,6 +282,7 @@ def get_onsets_ipa(language, threshold=.0002):
     max_onset_length = 3
 
     # Keep only frequent, vowel-free, short onsets
+    print(f"Extracted {len(onsets)} onsets before filtering")
     onsets = []
     filtered_onsets = [
         o for o, v in freq.items()
