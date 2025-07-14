@@ -213,7 +213,7 @@ def check_data_availability(language, processing_type, config_dict):
             subset = df[df["language"] == language]
             if subset[unit_col].isnull().any():
                 print(f"❌ Missing values for '{language}' in required data file.\n"
-                      f"👉 Please run count_ling_units('{language}') again.")
+                      f"👉 Please run count_ling_units('{language}').")
                 sys.stdout.flush() #  Force the print to show up immediately
                 check_failed = True
     
