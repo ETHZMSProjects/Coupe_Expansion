@@ -1,12 +1,15 @@
 from tqdm import tqdm
 import pandas as pd
 import warnings
-from process_ipa import load_charsiu_model, parallelize_ipa_generation
+from ipa_conversion import load_charsiu_model, parallelize_ipa_generation
 from syllabification import syllable_tokenization_wrapper, get_onsets_ipa
 from tqdm import tqdm
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
+from joblib import Parallel, delayed
+from functools import partial
+import re
+from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO)
 
@@ -82,7 +85,7 @@ def compute_info_rate(info_density, processing_type, language):
 
 
 
-def count_ling_units(language, config = None):
+def count_ling_units(language, config_dict):
     input_path = "semantically_similar_texts/semantically_similar_texts.csv"
     output_path = "semantically_similar_texts/ling_units_counts.csv"
 
@@ -103,33 +106,66 @@ def count_ling_units(language, config = None):
     df_lang  = df[df["language"] == language].copy()
 
     all_texts = [str(row["text"]).strip().split() for _, row in df_lang.iterrows()]
+    # Each sentence is a list of words or symbols
+    texts_formatted = split_sentences(all_texts)
+    print(f"texts_formatted: {texts_formatted}")
+
+    # Flatten the sentences
+    flat_texts = [[word for sentence in text for word in sentence] for text in texts_formatted]
+    print(f"flat_texts: {flat_texts}")
+    
+    # Ipa conversion
+    all_texts_ipa = []
+    parallel_ipa = partial(
+        parallelize_ipa_generation,
+        language=language,
+        tokenizer=tokenizer,
+        model=model,
+        config_dict=config_dict
+    )
+
+    flat_ipa_texts = parallel_ipa(flat_texts)
+    print(f"flat_ipa_texts: {flat_ipa_texts}")
 
     # Results
-    all_ipa = []
     phonemized_data = []
     syllabized_data = []
     n_phones_column = []
     n_syllables_column = []
 
-    ipa_sentences = parallelize_ipa_generation(all_texts, language, tokenizer, model)
+    tqdm.write("🔄 Splitting data into phones and syllables ...")
 
-    for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Splitting data to phones and syllables", ncols=80):
-        inputs = [(ipa, onsets) for ipa in ipa_sentence]
+    # Flatten all words from all sentences for batch processing
+    text_word_counts = []
+    words_flat = []
+    
+    for text in flat_ipa_texts:
+        text_word_counts.append(len(text))
+        words_flat.extend(text)
 
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            results = list(executor.map(syllable_tokenization_wrapper, inputs))
+    inputs = [(word, onsets, language) for word in words_flat]
+    results = Parallel(n_jobs=15, batch_size=64)(
+        delayed(syllable_tokenization_wrapper)(args) for args in tqdm(inputs, desc="Tokenizing", ncols=80)
+    )
 
-        phones = [p for r in results for p in r[0]]
-        sylls = [s for r in results for s in r[1]]
+    # Reconstruct sentence structure
+    idx = 0
+    for sent, length in zip(flat_ipa_texts, text_word_counts):
+        sentence_results = results[idx:idx + length]
+        phones = [p for r in sentence_results for p in r[0]]
+        sylls = [s for r in sentence_results for s in r[1]]
+        idx += length
 
         phonemized_data.append(phones)
         syllabized_data.append(sylls)
-        all_ipa.append(ipa_sentence)
         n_phones_column.append(len(phones))
         n_syllables_column.append(len(sylls))
+    
+    print(f"phones: {phonemized_data}")
+    print(f"syllables: {syllabized_data}")
 
     # Assign results to DataFrame
-    df_lang["ipa"] = all_ipa
+    df_lang["ipa"] = flat_ipa_texts
     df_lang["n_phones"] = n_phones_column
     df_lang["n_syllables"] = n_syllables_column
 
@@ -143,3 +179,31 @@ def count_ling_units(language, config = None):
 
     combined_df.to_csv(output_path, sep="\t", index=False, encoding="utf-8")
     logging.info(f"✅ Linguistic units counted and saved to: {output_path}")
+
+
+def split_sentences(texts):
+    """
+    Splits each list of word tokens in `texts` into sentences.
+    Each sentence ends with '.', '?', or '!', which are split off as separate tokens.
+    
+    Args:
+        texts: List of texts, each a list of word tokens (str).
+        
+    Returns:
+        List of texts, each a list of sentences, where each sentence is a list of tokens.
+    """
+    output = []
+    for tokens in texts:
+        sentence = []
+        grouped = []
+        for token in tokens:
+            # Extract words and punctuation marks separately
+            parts = re.findall(r"\w+(?:'\w+)?|[.,!?]", token)
+            sentence.extend(parts)
+            if any(p in ".!?" for p in parts):
+                grouped.append(sentence)
+                sentence = []
+        if sentence:
+            grouped.append(sentence)
+        output.append(grouped)
+    return output

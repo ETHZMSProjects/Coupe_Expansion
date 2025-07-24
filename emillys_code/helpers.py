@@ -7,6 +7,7 @@ from info_rate import count_ling_units
 import os
 import logging
 from functools import partial
+import re
 
 logging.basicConfig(level=logging.INFO)
 
@@ -55,8 +56,9 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
         if col not in df.columns:
             df[col] = np.nan
 
+
     # Take values from Coupé et. al data
-    original_df = pd.read_csv("C:/Users/emill/Documents/GitHub/Coupe_Expansion/InfoRateData.csv", sep="\t")
+    original_df = pd.read_csv("../InfoRateData.csv", sep="\t")
 
     unit_languages = unit_df['Language'].to_list()
     inter_intra_languages = inter_intra_df['Language'].to_list()
@@ -164,8 +166,6 @@ def check_data_availability(language, processing_type, config_dict):
         KeyError: If no raw corpus is registered for the language.
     """
 
-    print("Checking data availability...")
-
     if processing_type not in ['phones', 'sylls']:
         raise ValueError("❌ Invalid processing type. Use 'phones' or 'sylls'.")
 
@@ -176,10 +176,9 @@ def check_data_availability(language, processing_type, config_dict):
     # Check if the input file exists
     if not input_path.exists():
         print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
-        print(f"👉 Please run parse_to_phones_and_sylls('{language}') to generate the required data.")
         sys.stdout.flush() #  Force the print to show up immediately
         if not ask_question(
-            f"❓ Run parse_to_phones_and_sylls('{language}') now? [y/n]: ",
+            f"❓ Run parse_to_phones_and_sylls('{language}') now to generate the required data? [y/n]: ",
             partial(parse_to_phones_and_sylls, config_dict=config_dict),
             language
         ):
@@ -193,8 +192,7 @@ def check_data_availability(language, processing_type, config_dict):
 
     # Check if file exists 
     if not ling_unit_count_csv_path.is_file():
-        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.\n 👉 Please run count_ling_units('{language}') to generate it."
-        )
+        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.)")
         sys.stdout.flush() #  Force the print to show up immediately
         check_failed = True
     
@@ -205,22 +203,20 @@ def check_data_availability(language, processing_type, config_dict):
         required_columns = {"language", unit_col}
 
         if not required_columns.issubset(df.columns) or language not in df["language"].unique():
-            print(f"❌ Required columns or language entry missing in data file.\n"
-                  f"👉 Please run count_ling_units('{language}') first.")
+            print(f"❌ Required columns or language entry missing in data file.")
             sys.stdout.flush() #  Force the print to show up immediately
             check_failed = True
         else:
             subset = df[df["language"] == language]
             if subset[unit_col].isnull().any():
-                print(f"❌ Missing values for '{language}' in required data file.\n"
-                      f"👉 Please run count_ling_units('{language}').")
+                print(f"❌ Missing values for '{language}' in required data file.")
                 sys.stdout.flush() #  Force the print to show up immediately
                 check_failed = True
     
     if check_failed:
         if not ask_question(
-            f"❓ Run count_ling_units('{language}') now? [y/n]: ",
-            partial(count_ling_units, config=config_dict),
+            f"❓ Run count_ling_units('{language}') now to generate the required data? [y/n]: ",
+            partial(count_ling_units, config_dict=config_dict),
             language
         ):
             return None
@@ -238,7 +234,7 @@ def check_data_availability(language, processing_type, config_dict):
     else:
         logging.error(f"❌ Data generation failed")
         return None
-
+    
 
 
 

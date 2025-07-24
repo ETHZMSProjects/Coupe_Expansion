@@ -9,31 +9,34 @@
     "num2words Code": "fr",
     "charsiu Code": "fra",
     "Coupe Data": "Z:/data/FRA/Lexique383.tsv", 
-    "Sentence Data": "../../data/FRA/fr.tok"
+    "Sentence Data": "../../data/FRA/fr.tok", 
+    "Corpus Size": 570599 
   },
   {
     "Language": "DEU",
     "Columns": ["PhonStrsDISC", "Word Mann"],
     "Syllable Delimiter": "-",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["@", "°"],
+    "Keep Characters": ["ː","ˑ", "@"],
     "num2words Code": "de",
     "espeak Code": "de",
     "charsiu Code": "deu",
     "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx", 
-    "Sentence Data": "../../data/DEU/de.tok"
+    "Sentence Data": "../../data/DEU/de.tok", 
+    "Corpus Size": 642766 
   },
   {
     "Language": "ENG",
     "Columns": [],
     "Syllable Delimiter": "[-.]",
     "Phoneme Delimiter": "-",
-    "Keep Characters": ["ː","ˑ"],
+    "Keep Characters": ["ː","ˑ", "@"],
     "espeak Code": "en",
     "num2words Code": "en",
     "charsiu Code": "eng-us",
     "Coupe Data": "Z:/data/ENG/eng.txt", 
-    "Sentence Data": "../../data/ENG/en.tok"
+    "Sentence Data": "../../data/ENG/en.tok", 
+    "Corpus Size": 1830223 
   },
   {
     "Language": "CMN",
@@ -44,7 +47,8 @@
     "espeak Code": "zh",
     "charsiu Code": "cmn",
     "Coupe Data": "Z:/data/CMN/cmn.txt", 
-    "Sentence Data": "../../data/CMN/cmn.tok"
+    "Sentence Data": "../../data/CMN/cmn.tok", 
+    "Corpus Size": 0
   },
   {
     "Language": "VIE",
@@ -55,7 +59,8 @@
     "espeak Code": "vi",
     "num2words Code": "vi",
     "charsiu Code": "vie",
-    "Coupe Data": "../../data/VIE/vie.txt"
+    "Coupe Data": "../../data/VIE/vie.txt", 
+    "Corpus Size": 0
   },
   {
     "Language": "JPN",
@@ -66,7 +71,8 @@
     "espeak Code": "ja",
     "charsiu Code": "jpn",
     "Coupe Data": "Z:/data/JPN/jpn.txt", 
-    "Sentence Data": "../../data/JPN/ja.tok"
+    "Sentence Data": "../../data/JPN/ja.tok", 
+    "Corpus Size": 0
   },
   {
     "Language": "YUE",
@@ -76,7 +82,8 @@
     "Keep Characters": ["1", "5", "6", "3", "2", "4", "7", "9", "8"],
     "espeak Code": "zh-yue",
     "charsiu Code": "yue",
-    "Coupe Data": "../../data/YUE/yue.txt"
+    "Coupe Data": "../../data/YUE/yue.txt", 
+    "Corpus Size": 0
   }, 
   {
     "Language": "ESP",
@@ -84,14 +91,16 @@
     "Keep Characters": [], 
     "num2words Code": "es",
     "charsiu Code": "spa", 
-    "Sentence Data": "../../data/ESP/es.tok"
+    "Sentence Data": "../../data/ESP/es.tok", 
+    "Corpus Size": 402525 
   }, 
   {
     "Language": "ITA",
     "espeak Code": "it", 
-    "Keep Characters": [],
+    "Keep Characters": ["ː"],
     "num2words Code": "it",
-    "Sentence Data": "../../data/ITA/it.tok"
+    "Sentence Data": "../../data/ITA/it.tok", 
+    "Corpus Size": 868674 
   }
 ]
 

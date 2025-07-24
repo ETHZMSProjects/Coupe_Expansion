@@ -1,52 +1,12 @@
-import pandas as pd
 import re
-import string
-import subprocess
-import unicodedata
 import regex as re
-import torch
-from transformers import T5ForConditionalGeneration, AutoTokenizer
 from num2words import num2words
-from more_itertools import chunked
-import unicodedata
 import jieba
 import logging
-from joblib import Parallel, delayed, Memory
-from more_itertools import chunked
-from functools import partial
-import os 
 
-# ensure that espeak-ng is discoverable for all subprocesses during that session.
-os.environ["PATH"] = "/home/emilly/.local/bin:" + os.environ["PATH"]
 
 jieba.setLogLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
-
-# Caching (optional)
-memory = Memory("cache_dir", verbose=1)
-@memory.cache
-def get_ipa_espeak_cached(word, espeak_code):
-    return get_ipa_espeak(word, espeak_code)
-
-# --- CharsiuG2P Model Setup ---
-# Load model and tokenizer once to avoid repeated loading
-# Choose different model sizes (e.g., 'charsiu/g2p_multilingual_byT5_small_100')
-
-CHARSIU_MODEL_NAME = 'charsiu/g2p_multilingual_byT5_small_100' #'charsiu/g2p_multilingual_byT5_tiny_16_layers_100' # load better model when not testing
-charsiu_tokenizer = None
-charsiu_model = None
-
-def load_charsiu_model():
-    """Loads the CharsiuG2P model and tokenizer, or retrieves them if already loaded."""
-    global charsiu_tokenizer, charsiu_model
-    if charsiu_model is None or charsiu_tokenizer is None:
-        charsiu_tokenizer = AutoTokenizer.from_pretrained('google/byt5-small')
-        charsiu_model = T5ForConditionalGeneration.from_pretrained(CHARSIU_MODEL_NAME)
-        """if torch.cuda.is_available():
-            charsiu_model.to('cuda')
-            logging.info(f"{CHARSIU_MODEL_NAME} moved to GPU.")
-        logging.info(f"{CHARSIU_MODEL_NAME} running on CPU.")"""
-    return charsiu_tokenizer, charsiu_model
 
 
 # Compile regex once
@@ -101,7 +61,43 @@ def merge_clitics(tokens, language):
     else:
         return tokens 
     
-def merge_diphthongs(phones):
+# Diacritics and length marker pattern
+IPA_DIACRITICS = re.compile(r"[ˈˌːˑ˥˦˧˨˩̯́̀̂̃̄̆̇]")
+    
+def strip_diacritics(phone):
+    """Remove IPA diacritics and length markers."""
+    return IPA_DIACRITICS.sub('', phone)
+
+def is_glide_vowel_combo(phone, glides, monophthongs, diphthongs):
+    base = strip_diacritics(phone)
+    return (
+        len(base) >= 2 and
+        base[0] in glides and
+        base[1:] in monophthongs.union(diphthongs)
+    )
+
+def is_vowel(phone):
+    """
+    Returns True if phone is a vowel (monophthong, diphthong, triphthong, nasal, long vowel, or glide-vowel).
+    """
+    base = strip_diacritics(phone)
+
+    monophthongs, glides, nasal_vowel_components = get_monophthong_sets()
+    triphthongs, core_diphthongs, glide_vowel_diphthongs, vowel_glide_diphthongs, german_umlauts, french_nasals = get_diphthong_sets()
+    
+    DIPHTHONGS = core_diphthongs | glide_vowel_diphthongs | vowel_glide_diphthongs | german_umlauts | french_nasals
+    
+    ALL_VOWELS = monophthongs | DIPHTHONGS | nasal_vowel_components | triphthongs
+
+    return (
+        base in ALL_VOWELS or # Check if it's in our predefined vowel sets
+        is_glide_vowel_combo(base, glides, monophthongs, DIPHTHONGS) # Check for glide-vowel combinations
+    )
+
+def match_with_or_without_marker(candidate, diphthong_set):
+    return candidate in diphthong_set or strip_diacritics(candidate) in diphthong_set
+    
+def merge_diphthongs(phones, language):
     """
     Merges diphthongs and triphthongs in a list of IPA phones into single tokens for syllabification.
     Handles English, German, and French diphthongs/triphthongs with proper prioritization.
@@ -118,74 +114,28 @@ def merge_diphthongs(phones):
         List[str]: A new list with diphthongs/triphthongs merged as single items.
     """
     
-    # TRIPHTHONGS: Vowel + Glide + Schwa/Rhotic (highest priority)
-    triphthongs = {
-        # English triphthongs
-        'aɪə', 'aʊə', 'eɪə', 'oʊə', 'ɔɪə',
-        'aɪɚ', 'aʊɚ', 'eɪɚ', 'oʊɚ', 'ɔɪɚ',
-        # English alternative realizations
-        'juə', 'jʊə', 'jɪə',
-        # German (e.g. poetic or dialectal)
-        'aɪə', 'aʊə', 'ɔɪə',
-        # French (in gliding speech)
-        'waɪ', 'waj', 'ɥij', 'ɥiə'
-    }
-
-    # CORE DIPHTHONGS: Vowel + Vowel combinations (second priority)
-    core_diphthongs = {
-        # English
-        'eɪ', 'aɪ', 'ɔɪ', 'aʊ', 'oʊ',
-        'ɪə', 'ɛə', 'ʊə', 'ɑə', 'ɔə',
-        'iə', 'uə', 'eə', 'əʊ',
-        'ɪɚ', 'ɛɚ', 'ʊɚ', 'ɔɚ', 'aɚ', 'ɚə',
-
-        # German
-        'aɪ', 'aʊ', 'ɔɪ',
-        'iə', 'eə', 'uə', 'oə', 'øə', 'yə', 'ɔə', 'ɛə', 'ɪə',
-        'øy', 'œy',
-
-        # French
-        'ei', 'ɛi', 'ɔi', 'ui', 'øi', 'ie', 'ye', 'ue',
-        'au', 'eu', 'ɛu', 'ou', 'ɔu', 'œu', 'iu', 'io',
-        'iə', 'uə', 'eə', 'oə', 'ɑə',
-
-        # Common vowel-vowel across languages
-        'ɪi', 'ʊu', 'ɛe', 'ɔo', 'aə'
-    }
-
-    # GLIDE + VOWEL DIPHTHONGS: j/w/ɥ + Vowel (third priority)
-    glide_vowel_diphthongs = {
-        'ja', 'je', 'ji', 'jo', 'ju', 'jɑ', 'jɛ', 'jɪ', 'jɔ', 'jʊ', 'jə', 'jɚ',
-        'wa', 'we', 'wi', 'wo', 'wu', 'wɑ', 'wɛ', 'wɪ', 'wɔ', 'wʊ', 'wə', 'wɚ',
-        'ɥa', 'ɥe', 'ɥi', 'ɥo', 'ɥu', 'ɥy', 'ɥø', 'ɥœ', 'ɥɛ', 'ɥɔ', 'ɥɑ',
-        'jy', 'jø', 'jœ', 'wy', 'wø', 'wœ'
-    }
-
-    # VOWEL + GLIDE DIPHTHONGS: Vowel + j/w (lowest priority)
-    vowel_glide_diphthongs = {
-        'aj', 'ej', 'ij', 'oj', 'uj', 'ɑj', 'ɛj', 'ɪj', 'ɔj', 'ʊj', 'əj', 'ɚj',
-        'aw', 'ew', 'iw', 'ow', 'uw', 'ɑw', 'ɛw', 'ɪw', 'ɔw', 'ʊw', 'əw', 'ɚw',
-        'øyj', 'œyj', 'øyw', 'œyw'
-    }
-
+    triphthongs, core_diphthongs, glide_vowel_diphthongs, vowel_glide_diphthongs, german_umlauts, french_nasals = get_diphthong_sets()
     
     merged = []
     i = 0
+
+    # Update core diphthongs based on language
+    if language.upper() == "FRA":
+        core_diphthongs.update(french_nasals)
+    elif language.upper() == "DEU":
+        core_diphthongs.update(german_umlauts)
+
     
     while i < len(phones):
         matched = False
-
-        # Attach markers to previous segment
-        if phones[i] in {'ː', 'ˑ'} and merged:
-            merged[-1] += phones[i]
-            i += 1
-            continue
         
-        # Check triphthongs first (highest priority)
+        # Check triphthongs first (highest priority)s
         if i + 2 < len(phones):
-            candidate = phones[i] + phones[i + 1] + phones[i + 2]
-            if candidate in triphthongs:
-                merged.append(candidate)
+            candidate_triphtong = phones[i] + phones[i + 1] + phones[i + 2]
+            #print(f"Checking candidate: {candidate_triphtong}")
+            if match_with_or_without_marker(candidate_triphtong, triphthongs):
+                #print(f"matched")
+                merged.append(candidate_triphtong)
                 i += 3
                 matched = True
                 continue
@@ -204,17 +154,23 @@ def merge_diphthongs(phones):
             
             if not should_skip_for_triphthong:
                 # Priority 1: Core diphthongs (vowel + vowel)
-                if candidate_diphthong in core_diphthongs:
+                #print(f"Checking candidate: {candidate_diphthong}")
+                if match_with_or_without_marker(candidate_diphthong, core_diphthongs):
+                    #print('matched')
                     merged.append(candidate_diphthong)
                     i += 2
                     matched = True
                 # Priority 2: Glide + vowel
-                elif candidate_diphthong in glide_vowel_diphthongs:
+                    #print(f"Checking candidate: {candidate_diphthong}")
+                elif match_with_or_without_marker(candidate_diphthong, glide_vowel_diphthongs):
+                    #print('matched')
                     merged.append(candidate_diphthong)
                     i += 2
                     matched = True
                 # Priority 3: Vowel + glide
-                elif candidate_diphthong in vowel_glide_diphthongs:
+                    #print(f"Checking candidate: {candidate_diphthong}")
+                elif match_with_or_without_marker(candidate_diphthong, vowel_glide_diphthongs):
+                    #print('matched')
                     merged.append(candidate_diphthong)
                     i += 2
                     matched = True
@@ -225,267 +181,122 @@ def merge_diphthongs(phones):
             i += 1
     
     return merged
+
+def get_monophthong_sets():
     
+    monophtongs = {
+    'i', 'y', 'ɨ', 'ʉ', 'ɯ', 'u',
+    'ɪ', 'ʏ', 'ʊ',
+    'e', 'ø', 'ɘ', 'ɵ', 'ɤ', 'o',
+    'ɛ', 'œ', 'ə', 'ɜ', 'ɞ', 'ʌ', 'ɔ',
+    'æ', 'ɐ', 'a', 'ɶ', 'ɑ', 'ɒ'
+    }
 
-def merge_diphthongs_post(word):
-    """
-    Merges diphthongs that have been incorrectly split across two adjacent syllables.
-
-    This function checks for known diphthongs that may have been split at syllable
-    boundaries — for example, ['ma', 'ɪ'] → ['maɪ']. It looks at the final character 
-    of one syllable and the first character of the next, and if they form a known 
-    diphthong, it merges the two syllables accordingly.
-
-    Args:
-        word (list of str): A word represented as a list of syllables,
-                            where each syllable is a string of phonemes.
-
-    Returns:
-        list of str: The corrected list of syllables, with diphthongs merged
-                     where appropriate.
-
-    """
-    diphthongs = {'aɪ', 'eɪ', 'ɔɪ', 'aʊ', 'əʊ', 'oʊ', 'ɪə', 'eə', 'ʊə'}
-    fixed_word = []
-    i = 0
-    while i < len(word):
-        if i + 1 < len(word):
-            left = word[i]
-            right = word[i + 1]
-            # look at the last char of left and first char of right
-            possible_diphthong = left[-1] + right[0]
-            if possible_diphthong in diphthongs:
-                merged = left[:-1] + possible_diphthong + right[1:]
-                fixed_word.append(merged)
-                logging.debug(f"merged diphtong: {merged}")
-                i += 2
-                continue
-        fixed_word.append(word[i])
-        i += 1
-    return fixed_word
-
-
-
-def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
-    """
-    Flattens sentences into words, batch-generates IPA using G2P, 
-    and reconstructs the sentence structure.
+    glide_components = {'j', 'w', 'ɥ'}
     
-    Args:
-        text (list of list of str): Sentences as lists of words.
-        language (str): Language code (e.g., "FRA").
-        tokenizer: HuggingFace tokenizer.
-        model: HuggingFace model.
+    nasal_vowel_components = {
+        'ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃',  # Standard French
+        'ẽ', 'ã', 'ũ', 'ĩ', 'õ'  # Alt notations
+    }
 
-    Returns:
-        list of list of str: Sentences as lists of IPA transcriptions.
-    """
+    return monophtongs, glide_components, nasal_vowel_components
     
-    # Remove punctuation tokens, normalize and flatten
-    punctuation = {'.', ',', '?', '!'}
-    text = [[word for word in sentence if word not in punctuation] for sentence in text]
-    text = [[unicodedata.normalize("NFKC", word) for word in sentence]  for sentence in text]
+    
+def get_diphthong_sets():
 
-    flat_words = []
-    sentence_lengths = []
-
-    if language in ["FRA", "ENG"]:
-        merge = partial(merge_clitics, language=language)
-    else:
-        merge = lambda x: x # do nothing
-
-    for sentence in text:
-        sentence = merge(sentence)
-        sentence_lengths.append(len(sentence))
-        flat_words.extend(sentence)
-
-    print("🔠 Converting to IPA...")
-
-    # Batch IPA generation
-    ipa_flat, updated_word_list = generate_ipa(flat_words, language, tokenizer, model, config_dict)
-
-    # Reconstruct sentence structure
-    indices = list(pd.Series(sentence_lengths).cumsum())
-    start = 0
-    ipa_sentences = []
-
-
-    for end in indices:
-        ipa_sentences.append(ipa_flat[start:end])
-        start = end
-
-    #for orig, ipa in zip(text, ipa_sentences):
-        #logging.debug(f"{orig} → {ipa}")
-
-    return ipa_sentences
-
-
-def generate_ipa(word_list, language, tokenizer, model, config_dict):
-
-    espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA', 'ESP'] else False
         
-    if not word_list:
-        return []
-    
-    # Convert numbers
-    word_list = convert_numbers(word_list, language, config_dict)
+    # TRIPHTHONGS: Vowel + Glide + Schwa/Rhotic (highest priority)
+    triphthongs = {
+        # English triphthongs
+        'aɪə', 'aʊə', 'eɪə', 'oʊə', 'ɔɪə',
+        'aɪɚ', 'aʊɚ', 'eɪɚ', 'oʊɚ', 'ɔɪɚ',
+        # English alternative realizations
+        'juə', 'jʊə', 'jɪə',
+        # French (in gliding speech)
+        'waɪ', 'waj', 'ɥij', 'ɥiə',
+        # German potential triphthongs
+        'aɪə', 'aʊə', 'ɔɪə'  # in unstressed contexts
+    }
 
-    # Normalize Unicode (NFC or NFKC), strip punctuation etc.
-    word_list = [word for word in word_list
-        if word.strip() not in {"'", "’", "", ":", "。", "?", "¿", "...", ";", "«", "»", "-", "–", "“", "„", "%", "/", '"'}
-    ]
-    
-    if language in ['CMN']:
-            word_list = [list(jieba.cut(sentence, cut_all=False)) for sentence in word_list]
-            logging.debug(f"jierba: {word_list}")
+    # CORE DIPHTHONGS: Vowel + Vowel combinations (second priority)
+    core_diphthongs = {
+        # English
+        'eɪ', 'aɪ', 'ai', 'ɔɪ', 'aʊ', 'oʊ',
+        'ɪə', 'ɛə', 'ʊə', 'ɑə', 'ɔə',
+        'iə', 'uə', 'eə', 'əʊ',
+        'ɪɚ', 'ɛɚ', 'ʊɚ', 'ɔɚ', 'aɚ', 'ɚə',
 
-    ###  Use espeak to get IPA
-    if espeak: 
-        espeak_code = config_dict['espeak Code']
-
-        # Chunks the word list into batches of 64 for subprocess efficiency
-        word_list = [unicodedata.normalize("NFC", w) for w in word_list]
-        word_chunks = list(chunked(word_list, 128))
-
-        """results_nested = Parallel(n_jobs=4)(
-            delayed(get_espeak_ipa_batch)(chunk, espeak_code) for chunk in word_chunks
-        )"""
-
-        results_nested = [get_espeak_ipa_batch(chunk, espeak_code) for chunk in word_chunks]
-
-        raw_ipa = [ipa for chunk in results_nested for ipa in chunk]
-
-        for word, ipa in zip(word_list, raw_ipa):
-            if not ipa:
-                print(f"🧪 EMPTY: '{word}' → '{ipa}'")
-
-        clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
-        ipa_results = [clean(ipa) for ipa in raw_ipa]
-    
-    else: 
-         ### Use g2p model to generate IPA
-
-        # CharsiuG2P requires a language prefix and a space after the colon
-        # Example: "<eng>: hello" or "<fra>: bonjour"
-        charsiu_code = config_dict['charsiu Code']
-        tagged_words = [f"<{charsiu_code}>: {word.lower()}" for word in word_list] 
-        ipa_results = []
-        model.eval()
-
-        # Move model to GPU once if available
-        if torch.cuda.is_available():
-            model = model.to('cuda')
-
-        with torch.no_grad():
-            for batch in chunked(tagged_words, 128):
-                encoded = tokenizer(batch, padding=True, return_tensors='pt')
-                if torch.cuda.is_available():
-                    encoded = {k: v.to('cuda') for k, v in encoded.items()}
-                preds = model.generate(
-                    input_ids=encoded["input_ids"],
-                    attention_mask=encoded["attention_mask"],
-                    num_beams=1,
-                    max_length=50,
-                    do_sample=False
-                )
-                decoded = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)
-                cleaned_batch = [clean_ipa(ipa, True, '') for ipa in decoded]
-                ipa_results.extend([ipa for ipa in cleaned_batch if ipa])
-
-    # filter out empty entries in both the original and the ipa word list
-    filtered = [(w, ipa) for w, ipa in zip(word_list, ipa_results) if ipa]
-    word_list, ipa_results = zip(*filtered)
-    return list(ipa_results), list(word_list)
-
-
-# Regex for grapheme clusters
-GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
-
-def clean_ipa(ipa_string, as_string, delimiter, config_dict):
-    """
-    Cleans a given IPA string by removing non-phonemic characters,
-    while preserving delimiter and language-specific meaningful IPA symbols.
-    """
-    keep_chars = set(config_dict["Keep Characters"]) 
-
-    if isinstance(ipa_string, list):
-        ipa_string = " ".join(ipa_string)
-    
-    # First, globally remove any ( ... ) artifacts
-    ipa_string = re.sub(r"\(.*?\)", "", ipa_string)
-
-    segments = GRAPHEME_RE.findall(ipa_string)
-    segments = [re.sub(r'[\u200b\u200c\u200d\uFEFF]', '', seg) for seg in segments]
-
-    # Preserve any characters in the delimiter
-    # Split delimiters (e.g., '[.-]' → {'.', '-'})
-    delimiter_chars = set()
-    if isinstance(delimiter, str):
-        if delimiter.startswith("[") and delimiter.endswith("]"):
-            delimiter_chars = set(delimiter[1:-1])
-        else:
-            delimiter_chars = set(delimiter)
-
-     # Full preservation set
-    PRESERVE = keep_chars | delimiter_chars
-
-    STRIP_CHARS = {
-        'ˈ', 'ˌ', '.', ',', '-', '/', '!', '?', ';', ' ', '-', '(', ')', '"', "'", '`', '’',
-        '“', '”', '‘', '’', '《', '》', '【', '】','[', ']', '{', '}', '§', '%', ' ',
-        '&', '#', '@', '…', '—', '–', '～', '·', '「', '」', '『', '』', '_', '=', '+', '*', '^', '~',
-        '\n', '\t', '\r', '"', "'", '’', '`', '。', '、', '，', '！', '？', '；', '：' , 'ʼ', 'ʹ', 'ʽ'
-    } - PRESERVE  # Subtract preserved symbols
-
-    STRIP_PATTERN = re.compile("|".join(map(re.escape, STRIP_CHARS)))
-
-    # Clean the segments
-    cleaned_as_list = []
-    for seg in segments:
-        seg = STRIP_PATTERN.sub("", seg) 
-        if any(unicodedata.category(char).startswith('S') for char in seg):  # Symbol characters
-            continue
-        seg = seg.strip() # remove trailing spaces and empty segments
-        if seg:
-            cleaned_as_list.append(seg)
-    if not cleaned_as_list: 
-        return None
+        # Standard German diphthongs
+        'aɪ', 'aʊ', 'ɔɪ', 
         
-    return "".join(cleaned_as_list) if as_string else cleaned_as_list
+        # Vowel + schwa combinations 
+        'iə', 'eə', 'uə', 'oə', 'øə', 'yə', 'ɔə', 'ɛə', 'ɪə', 'ʊə',
+        
+        # Vowel + /ɐ/ combinations (German r-vocalization)
+        'iɐ', 'eɐ', 'uɐ', 'oɐ', 'øɐ', 'yɐ', 'ɔɐ', 'ɛɐ', 'ɪɐ', 'ʊɐ', 'aɐ',
 
-def get_espeak_ipa_batch(chunk, espeak_code):
-    """Run espeak-ng on a batch of words, one at a time."""
-    return [get_ipa_espeak(word, espeak_code) for word in chunk]
+        # French
+        'ei', 'ɛi', 'ɔi', 'ui', 'øi', 'ie', 'ye', 'ue',
+        'au', 'eu', 'ɛu', 'ou', 'ɔu', 'œu', 'iu', 'io', 'ɑə',
 
-def get_ipa_espeak(word, espeak_code):
-    """Get IPA transcription from espeak-ng."""
+        # Common vowel-vowel across languages
+        'ɪi', 'ʊu', 'ɛe', 'ɔo', 'aə', 'əa'
+    }
 
-    raw = word
-    word = unicodedata.normalize("NFKC", word)
-    word = word.strip(string.punctuation + "’‘“”").strip().lower()
+    # GLIDE + VOWEL DIPHTHONGS: j/w/ɥ + Vowel (third priority)
+    glide_vowel_diphthongs = {
+        # Standard combinations
+        'ja', 'je', 'ji', 'jo', 'ju', 'jɑ', 'jɛ', 'jɪ', 'jɔ', 'jʊ', 'jə', 'jɚ',
+        'wa', 'we', 'wi', 'wo', 'wu', 'wɑ', 'wɛ', 'wɪ', 'wɔ', 'wʊ', 'wə', 'wɚ',
+        'ɥa', 'ɥe', 'ɥi', 'ɥo', 'ɥu', 'ɥy', 'ɥø', 'ɥœ', 'ɥɛ', 'ɥɔ', 'ɥɑ',
+        
+        # German-specific glide combinations
+        'jy', 'jø', 'jœ', 'wy', 'wø', 'wœ',
+        'jɐ', 'wɐ',  # with r-vocalization
+        
+    }
 
-    if not word:
-        # Skip this word or sign 
-        #logging.warning(f"⚠️ Word became empty after cleaning: '{raw}'")
-        return ""
+    # VOWEL + GLIDE DIPHTHONGS: Vowel + j/w (lowest priority)
+    vowel_glide_diphthongs = {
+        # Standard combinations
+        'aj', 'ej', 'ij', 'oj', 'uj', 'ɑj', 'ɛj', 'ɪj', 'ɔj', 'ʊj', 'əj', 'ɚj',
+        'aw', 'ew', 'iw', 'ow', 'uw', 'ɑw', 'ɛw', 'ɪw', 'ɔw', 'ʊw', 'əw', 'ɚw',
+        
+        # German-specific
+        'øj', 'yj', 'œj', 'ɐj', 'ɐw',
+        'øw', 'yw', 'œw',
+        
+        # Complex umlaut combinations
+        'øyj', 'œyj', 'øyw', 'œyw'
+    }
 
-    try:
-        result = subprocess.run(
-            ['espeak-ng', '-v', espeak_code, '--ipa=3', '-q', word.lower()],
-            capture_output=True, text=True
-        )
-        if result.returncode != 0:
-            #logging.error(f"❌ espeak-ng returned error for '{word}': {result.stderr.strip()}")
-            print(f"❌ espeak-ng returned error for '{word}': {result.stderr.strip()}")
-            return ""
+    german_umlaut_diphthongs = {
+        # øy and variants (like 'øy' in "Freunde", "neu", etc.)
+        'øy', 'øʏ', 'œy', 'œʏ',
+        # Reversed 
+        'yø', 'ʏø', 'yœ', 'ʏœ', 'yɪ', 'ʏɪ',
+        
+        # others
+        'ɔø', 'øɔ', 'ɛœ', 'œɛ',
+        
+        # With reduced vowels
+        'øə', 'œə', 'yə', 'ʏə'
+    }
 
-        ipa = result.stdout.strip()
-        if not ipa:
-            #logging.warning(f"⚠️ espeak-ng gave empty output for '{word}'")
-            print(f"⚠️ espeak-ng gave empty output for '{word}'")
-            return ""
+    
+    # 2. FRENCH NASALIZED VOWEL DIPHTHONGS 
+    french_nasal_diphthongs = {
+        # Nasalized vowel + vowel
+        'ɑ̃i', 'ɑ̃u', 'ɛ̃i', 'ɛ̃u', 'œ̃i', 'œ̃u', 'ɔ̃i', 'ɔ̃u',
+        # Vowel + nasalized vowel  
+        'iɑ̃', 'uɑ̃', 'iɛ̃', 'uɛ̃', 'iœ̃', 'uœ̃', 'iɔ̃', 'uɔ̃',
+        # Alternative notations
+        'ãi', 'ãu', 'ẽi', 'ẽu', 'ĩa', 'ũa', 'õi', 'õu'
+    }
+    
+    
+    return triphthongs, core_diphthongs, glide_vowel_diphthongs, vowel_glide_diphthongs, german_umlaut_diphthongs, french_nasal_diphthongs
 
-        return ipa
 
-    except Exception as e:
-        logging.error(f"❌ espeak-ng crashed on word '{word}': {e}")
-        return ""
+
+

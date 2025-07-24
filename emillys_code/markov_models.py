@@ -119,7 +119,7 @@ class MarkovModel:
                 sentence_ngrams = list(ngrams(sentence_stream, self.n))
                 ngrams_per_sentence.extend(sentence_ngrams)
 
-        logging.info(f"ngram examples: {ngrams_per_sentence[:5]}")
+        logging.info(f"ngram examples: {ngrams_per_sentence[:15]}")
         return ngrams_per_sentence
 
     def generate_ngrams_for_words(self, input_list):
@@ -149,7 +149,8 @@ class MarkovModel:
             if len(word) >= self.n: 
                 word_ngrams  = list(ngrams(word, self.n))
                 ngrams_per_word.extend(word_ngrams)
-        logging.debug(f"ngram examples: {ngrams_per_word[:5]}")
+        logging.debug(f"ngram examples: {ngrams_per_word[:15]}")
+
         return ngrams_per_word
 
     def save_model(self, language, processing_type, text_type):

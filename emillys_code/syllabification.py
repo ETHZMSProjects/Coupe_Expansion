@@ -2,19 +2,21 @@ import os
 import regex as re
 import pickle
 from collections import Counter
-from process_ipa import load_charsiu_model, parallelize_ipa_generation, merge_diphthongs
+from ipa_conversion import load_charsiu_model, parallelize_ipa_generation
+from process_ipa import merge_diphthongs, is_vowel
 from tqdm import tqdm
 import logging
 from pathlib import Path
 from joblib import Parallel, delayed
 from functools import partial
+import os
 
 
 logging.basicConfig(level=logging.INFO)
 
 def syllable_tokenization_wrapper(args):
-    ipa, onsets = args
-    return syllable_tokenization(ipa, onsets)
+    ipa, onsets, language = args
+    return syllable_tokenization(ipa, onsets, language)
 
 # --- Main Processing Function ---
 def parse_to_phones_and_sylls(language, config_dict):
@@ -26,9 +28,9 @@ def parse_to_phones_and_sylls(language, config_dict):
         language (str): The ISO 639-3 language code (e.g., 'FRA').
     """
 
-    # Load tokenized text (assuming this is orthographic text, not IPA)
-    #input_path = f"produced_data/{language}/{language}_original_sentences.pkl"
+    # Step 1: Load tokenized text (assuming this is orthographic text, not IPA)
     input_path = config_dict['Sentence Data']
+    folder = f"produced_data/{language}"
     
     try:
         if not os.path.exists(input_path):
@@ -36,7 +38,7 @@ def parse_to_phones_and_sylls(language, config_dict):
         
         tqdm.write("📥 Loading corpus data ...")
         text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-        text = text[:1000]    
+        #text = text[:1000]    
         
     except FileNotFoundError as e:
         logging.error(e)
@@ -45,44 +47,72 @@ def parse_to_phones_and_sylls(language, config_dict):
     if len(text) == 0:
         raise ValueError("No data loaded. Input file may be empty or incorrectly formatted.")
     else: tqdm.write(f"✅ Loaded {len(text)} sentences from {input_path}")
-
-
-    tokenizer, model = load_charsiu_model()
-
-    phonemized_data = []  # list of lists for phonemes
-    syllabized_data = []  # list of lists for syllables 
     
-    parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
-    ipa_sentences = parallel_ipa(text)
-
-    # Save ipa sentences
-    folder = f"produced_data/{language}"
-    os.makedirs(folder, exist_ok=True)  # Create the folder if it doesn't exist
-    ipa_output_path = f"{folder}/ipa_corpus_{language}.pkl"
-    with open(ipa_output_path, "wb") as f:
-        pickle.dump(ipa_sentences, f)
+    # Step 2: Check if IPA corpus already exists, if not generate it
+    expected_corpus_size = config_dict['Corpus Size']
+    exists, existing_path = ipa_corpus_exists(language, expected_corpus_size)
     
+    if exists:
+        tqdm.write(f"✅ IPA corpus with {expected_corpus_size} sentences for {language} already exists at {existing_path}. Skipping IPA generation.")
+        with open(existing_path, "rb") as f:
+            ipa_sentences = pickle.load(f)
+    else: 
+        tokenizer, model = load_charsiu_model() # for fallback ipa generation using CharsiuG2P
+        parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
+        ipa_sentences = parallel_ipa(text)
+
+        # Save ipa sentences
+        num_sent = len(ipa_sentences) # ipa corpus size 
+        tqdm.write(f"📦 Saving IPA corpus for {language} with {num_sent} sentences ...")
+        os.makedirs(folder, exist_ok=True)  # Create the folder if it doesn't exist
+        ipa_output_path = f"{folder}/ipa_corpus_{language}_size:{num_sent}.pkl"
+        with open(ipa_output_path, "wb") as f:
+            pickle.dump(ipa_sentences, f)
+    
+    # Step 3: Tokenize IPA sentences into phones and syllables
+    phonemized_data, syllabized_data = [], []
+
     # Get syllable boundaries for that language
     onsets = get_onsets_ipa(language)
-    logging.info(f"onsets: {onsets}")
 
-    for ipa_sentence in tqdm(ipa_sentences, desc="🔄 Splitting data to phones and syllables", ncols=80):
-        inputs = [(ipa, onsets) for ipa in ipa_sentence]  # build argument pairs
-        results = Parallel(n_jobs=-1)(
-            delayed(syllable_tokenization_wrapper)(args) for args in inputs
-        )
+    tqdm.write("🔄 Splitting data into phones and syllables ...")
+    # Flatten all words from all sentences for batch processing
+    all_words = []
+    sentence_word_counts = []
+    
+    for ipa_sentence in ipa_sentences:
+        sentence_word_counts.append(len(ipa_sentence))
+        all_words.extend(ipa_sentence)
+    
+    # Process ALL words at once in parallel
+    inputs = [(ipa, onsets, language) for ipa in all_words]
+    results = Parallel(n_jobs=15, batch_size=100)(
+        delayed(syllable_tokenization_wrapper)(args) for args in inputs
+    )
+    
+    # Reconstruct sentence structure
+    word_idx = 0
+    
+    for sentence_length in sentence_word_counts:
+        sentence_phones = []
+        sentence_sylls = []
         
-        phones, sylls = zip(*results)
-        phonemized_data.append(list(phones))
-        syllabized_data.append(list(sylls))
+        for _ in range(sentence_length):
+            phones, sylls = results[word_idx]
+            sentence_phones.append(phones)
+            sentence_sylls.append(sylls)
+            word_idx += 1
+            
+        phonemized_data.append(sentence_phones)
+        syllabized_data.append(sentence_sylls)
 
     if any(any(sublist) for sublist in ipa_sentences): 
         # Save results
         os.makedirs(f"{folder}/phones", exist_ok=True)
         os.makedirs(f"{folder}/sylls", exist_ok=True)
 
-        logging.info(f"text: {text[:20]}")
-        logging.info(f"ipa: {ipa_sentences[:20]}")
+        #logging.info(f"text: {text[:20]}")
+        #logging.info(f"ipa: {ipa_sentences[:20]}")
         logging.info(f"phonemized data: {phonemized_data[:20]}")
         logging.info(f"syllabized data: {syllabized_data[:20]}")
         
@@ -97,8 +127,7 @@ def parse_to_phones_and_sylls(language, config_dict):
     else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
 
 
-
-def syllable_tokenization(cleaned_ipa, onsets):
+def syllable_tokenization(cleaned_ipa, onsets, language):
     """
     Performs automatic syllabification of a word using IPA transcriptions and language-specific phonotactic constraints.
     """
@@ -108,7 +137,7 @@ def syllable_tokenization(cleaned_ipa, onsets):
         logging.warning(f"Phone tokenization failed for IPA input: {cleaned_ipa}")
         return [], []
 
-    sylls_prep = merge_diphthongs(phones)
+    sylls_prep = merge_diphthongs(phones, language)
     syllables = []
 
     current_pos = 0 # start of the segment we're analyzing for the current syllable
@@ -118,7 +147,9 @@ def syllable_tokenization(cleaned_ipa, onsets):
         # This vowel will be the nucleus of the syllable we are currently forming.
         vowel_nucleus_idx = -1
         for i in range(current_pos, len(sylls_prep)):
+            #print(f"Checking candidate for vowel: {sylls_prep[i]}")
             if is_vowel(sylls_prep[i]):
+                #print('vowel found')
                 vowel_nucleus_idx = i
                 break
         
@@ -147,15 +178,20 @@ def syllable_tokenization(cleaned_ipa, onsets):
                 current_syllable_onset = temp_onset
                 current_syllable_onset_len = k
                 break
+
+        # Calculate the actual start of the current syllable's onset within `phones`
+        actual_onset_start_idx = vowel_nucleus_idx - current_syllable_onset_len
+
+        # 3. Attach unparsed pre-nuclear consonants to the current syllable
+        if not syllables and current_pos < actual_onset_start_idx:
+            current_syllable_parts.extend(sylls_prep[current_pos : actual_onset_start_idx])
         
-        # 3. Remaining consonants before the onset form the coda of the *previous* syllable.
+        # 4. Remaining consonants before the onset form the coda of the *previous* syllable.
         # If this is the first syllable being formed, there's no previous syllable to attach to.
         # If `current_pos` is not 0, it means we are past the first syllable. Any consonants
         # that could NOT be part of the `current_syllable_onset` must belong to the coda
         # of the *preceding* syllable.
-        
-        # Calculate the actual start of the current syllable's onset within `phones`
-        actual_onset_start_idx = vowel_nucleus_idx - current_syllable_onset_len
+    
 
         # If there are consonants between `current_pos` and `actual_onset_start_idx`,
         # these are the coda for the *previous* syllable.
@@ -168,12 +204,14 @@ def syllable_tokenization(cleaned_ipa, onsets):
         # Add the vowel nucleus to the current syllable
         current_syllable_parts.append(sylls_prep[vowel_nucleus_idx])
 
-        # 4. From the phones *after* the current vowel, find the maximal legal onset for the *next* syllable.
+        # 5. From the phones *after* the current vowel, find the maximal legal onset for the *next* syllable.
         # We need to find the next vowel to define the inter-vocalic consonant cluster.
         next_vowel_search_start = vowel_nucleus_idx + 1
         next_vowel_idx = -1
         for i in range(next_vowel_search_start, len(sylls_prep)):
+            #print(f"Checking candidate for vowel: {sylls_prep[i]}")
             if is_vowel(sylls_prep[i]):
+                #print('vowel found')
                 next_vowel_idx = i
                 break
 
@@ -186,7 +224,6 @@ def syllable_tokenization(cleaned_ipa, onsets):
             break # Exit loop, no more syllables
 
         # Consonants segment between the current vowel and the next vowel.
-        # This is where the crucial V1-C*C-V2 split happens.
         inter_vocalic_consonants = sylls_prep[next_vowel_search_start : next_vowel_idx]
         
         maximal_next_onset = ""
@@ -240,6 +277,11 @@ def get_onsets_ipa(language, threshold=.0001):
 
     This function is adapted from syllabipy's getOnsets function.
     See https://github.com/henchc/syllabipy/blob/master/syllabipy/legalipy.py
+
+    It extracts onsets from a given language's IPA corpus, ensuring that:
+    - It only extracts consonants before the first vowel
+    - Onsets do not contain vowels
+    - Low-frequency onsets are discarded, reducing noise from mis-syllabified or tokenization errors
     '''
 
     folder = f"produced_data/{language}"
@@ -251,27 +293,28 @@ def get_onsets_ipa(language, threshold=.0001):
     # Flatten the list of sentences into a single list of words
     # skips invalid words
     text = [word for sentence in ipa_sentences for word in sentence if word]
-    print(f"Total words in IPA corpus: {len(text)}")
-    
-    ipa_vowels = set([
-        # Common monophthongs
-        'i', 'y', 'ɪ', 'ʏ', 'e', 'ø', 'ɛ', 'œ', 'æ', 'a', 'ɶ', 'ɨ', 'ʉ',
-        'ɘ', 'ɵ', 'ə', 'ɜ', 'ɞ', 'ɐ', 'ɯ', 'u', 'ʊ', 'ɤ', 'o', 'ʌ', 'ɔ', 'ɑ', 'ɒ',
-
-        # Nasal vowels
-        'ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃', 'ẽ', 'ã', 'ũ', 'ĩ'
-    ])
 
     onsets = []
     for word in text:
         word = word.lower()
         phones = phone_tokenization(word)
         
-       # NEW safer onset extraction
-        vowel_index = next((i for i, ph in enumerate(phones) if ph in ipa_vowels), len(phones))
-        onset = ''.join(phones[:vowel_index])
-        if onset:  # exclude empty onsets
-            onsets.append(onset)
+        vowel_index = -1
+        for i, ph in enumerate(phones):
+            #print(f"Checking candidate for vowel: {ph}")
+            if is_vowel(ph):
+                #print('vowel found')
+                vowel_index = i
+                break
+        
+        if vowel_index > 0:  # Only extract if there are consonants before the first vowel
+            potential_onset = phones[:vowel_index]
+            
+            # Double-check that none of the onset phones contain vowels
+            if not any(is_vowel(phone) for phone in potential_onset):
+                onset = ''.join(potential_onset)
+                if onset:  # exclude empty onsets
+                    onsets.append(onset)
 
     onsets = [x for x in onsets if x != '']  # get rid of empty onsets
 
@@ -279,16 +322,14 @@ def get_onsets_ipa(language, threshold=.0001):
     freq = Counter(onsets)
     total_onsets = sum(freq.values())
 
-    max_onset_length = 3
+    #max_onset_length = 3
 
     # Keep only frequent, vowel-free, short onsets
-    print(f"Extracted {len(onsets)} onsets before filtering")
     onsets = []
     filtered_onsets = [
         o for o, v in freq.items()
         if (v / total_onsets) > threshold
-        and all(char not in ipa_vowels for char in o)
-        and len(o) <= max_onset_length
+        and not any(is_vowel(char) for char in phone_tokenization(o))
     ]
     if not filtered_onsets:
         logging.warning(f"No valid onsets extracted for language {language}.")
@@ -319,72 +360,35 @@ def phone_tokenization(word):
                 phones.append(affricate_candidate)
                 i += 2
                 continue
+        
+        # Attach markers to previous segment
+        if i + 1 < len(segments) and segments[i+1] in {'ː', 'ˑ'}:
+            phones.append(segments[i] + segments[i+1])
+            i += 2
+            continue
+        
         # Default case: treat as individual phone
         phones.append(segments[i])
         i += 1
 
     return phones
 
-# Diacritics and length marker pattern
-IPA_DIACRITICS = re.compile(r"[ˈˌːˑ˥˦˧˨˩́̀̂̃̄̆̇]")
 
-# Vowel components
-MONOPHTHONGS = {
-    'i', 'y', 'ɨ', 'ʉ', 'ɯ', 'u',
-    'ɪ', 'ʏ', 'ʊ',
-    'e', 'ø', 'ɘ', 'ɵ', 'ɤ', 'o',
-    'ɛ', 'œ', 'ə', 'ɜ', 'ɞ', 'ʌ', 'ɔ',
-    'æ', 'ɐ', 'a', 'ɶ', 'ɑ', 'ɒ'
-}
+def ipa_corpus_exists(language, expected_size):
+    folder = f"produced_data/{language}"
+    if not os.path.exists(folder):
+        return False, None
+    for filename in os.listdir(folder):
+        if filename.startswith(f"ipa_corpus_{language}_size:"):
+            size_part = filename.split("_size:")[-1].replace(".pkl", "")
+            if size_part.isdigit() and int(size_part) == expected_size:
+                return True, os.path.join(folder, filename)
+    return False, None
 
-DIPHTHONGS = {
-    'aɪ', 'aʊ', 'ɔɪ', 'eɪ', 'oʊ', 'ɪə', 'ɛə', 'ʊə','əʊ',
-    'ɥi', 'wi', 'wa', 'wɛ',  # French/English
-    'ai', 'au', 'ei', 'ou', 'oi', 'ui',  # Orthographic-style diphthongs
-    'ju', 'jə', 'je', 'jʊ', 'wi', 'we', 'wo', 'wə'  # Glide + vowel combos
-}
 
-NASAL_VOWELS = {
-    'ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃',  # Standard French
-    'ẽ', 'ã', 'ũ', 'ĩ', 'õ'  # Alt notations
-}
 
-TRIPHTHONGS = {
-    'aɪə', 'aʊə', 'eɪə', 'oʊə', 'ɔɪə'
-}
 
-ALL_VOWELS = MONOPHTHONGS | DIPHTHONGS | NASAL_VOWELS | TRIPHTHONGS
 
-GLIDES = {'j', 'w', 'ɥ'}
-
-def strip_diacritics(phone):
-    """Remove IPA diacritics and length markers."""
-    return IPA_DIACRITICS.sub('', phone)
-
-def is_glide_vowel_combo(phone):
-    """Check for sequences like 'ju', 'wə', 'ɥi'."""
-    return (
-        len(phone) >= 2 and
-        phone[0] in GLIDES and
-        phone[1:] in MONOPHTHONGS.union(DIPHTHONGS)
-    )
-
-def is_vowel(phone):
-    """
-    Returns True if phone is a vowel (monophthong, diphthong, triphthong, nasal, long vowel, or glide-vowel).
-    """
-    cleaned = strip_diacritics(phone)
-
-    if cleaned in ALL_VOWELS:
-        return True
-
-    if cleaned.endswith('ː') and cleaned[:-1] in ALL_VOWELS:
-        return True
-
-    if is_glide_vowel_combo(cleaned):
-        return True
-
-    return False
 
 
 
