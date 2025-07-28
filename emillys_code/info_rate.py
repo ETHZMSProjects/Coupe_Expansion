@@ -10,6 +10,7 @@ from joblib import Parallel, delayed
 from functools import partial
 import re
 from collections import defaultdict
+import ast
 
 logging.basicConfig(level=logging.INFO)
 
@@ -67,6 +68,9 @@ def compute_info_rate(info_density, processing_type, language):
             n_units = row['n_syllables']
         elif processing_type == 'phones':
             n_units = row['n_phones']
+        elif processing_type == 'words':
+            ipa_list = ast.literal_eval(row["ipa"])  
+            n_units = len(ipa_list)
         else: 
             warnings.warn("Unknown processing_type. Use 'sylls' or 'phones'.")
             return []

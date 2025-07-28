@@ -32,12 +32,12 @@ class MarkovModel:
         ngram_list = []
         alpha = 0.1
 
-        if text_type == "sentences":  
+        if text_type == "across_sentences":  
             ngram_list = self.generate_ngrams_for_sent(data)
-        elif text_type == "words":
+        elif text_type == "within_words":
             ngram_list = self.generate_ngrams_for_words(data)
         else: 
-            warnings.warn("Unknown text_type. Use 'sentences' or 'words'.")
+            warnings.warn("Unknown text_type. Use 'across_sentences' or 'within_words'.")
             return
         
         # Count occurrence of each n-gram and prefix
@@ -92,10 +92,13 @@ class MarkovModel:
     def generate_ngrams_for_sent(self, input_list):
         """
         Generate n-grams across words within each sentence, but not across sentences.
+         Auto-detects if input is:
+        - List[List[str]] where each str is a word → compute word-level n-grams
+        - List[List[List[str]]] where each inner list is a word (sequence of phonemes/syllables) → compute unit-level n-grams
         
         input_list is a List of sentences:
         - each sentence is List of words
-        - each word is List of phonemes, segments or syllables
+        - each word is a string or a list of phonemes or syllables
         
         Example:
         input_list = [
@@ -108,11 +111,23 @@ class MarkovModel:
         sentence_stream = ['p','u','ʁ','l','ə','ʁ','w','a','j','o','m']
         Then makes n-grams over this stream.
         """
+        # Detect input type by checking the first "word" in the first sentence
+        first_word = input_list[0][0]
+        is_word_string = isinstance(first_word, str)
+        is_word_list = isinstance(first_word, list)
+
         ngrams_per_sentence = []
 
         for sentence in input_list:
-            # Flatten sentence to stream of linguistic units
-            sentence_stream = [segment for word in sentence for segment in word]
+            if is_word_string:
+                # Sentence is list of words (strings) → word-level n-grams
+                sentence_stream = sentence
+            elif is_word_list:
+                # Sentence is list of words (lists of units)  
+                # Flatten sentence to stream of linguistic units
+                sentence_stream = [segment for word in sentence for segment in word]
+            else:
+                raise ValueError("Unsupported input structure")
             
             # Generate n-grams if enough units
             if len(sentence_stream) >= self.n:
