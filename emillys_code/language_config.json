@@ -10,7 +10,7 @@
     "charsiu Code": "fra",
     "Coupe Data": "Z:/data/FRA/Lexique383.tsv", 
     "Sentence Data": "../../data/FRA/fr.tok", 
-    "Corpus Size": 570599 
+    "Corpus Size": 570550 
   },
   {
     "Language": "DEU",
@@ -23,7 +23,7 @@
     "charsiu Code": "deu",
     "Coupe Data": "Z:/data/DEU/WebCelex_German.xlsx", 
     "Sentence Data": "../../data/DEU/de.tok", 
-    "Corpus Size": 642766 
+    "Corpus Size": 642700
   },
   {
     "Language": "ENG",
@@ -36,7 +36,7 @@
     "charsiu Code": "eng-us",
     "Coupe Data": "Z:/data/ENG/eng.txt", 
     "Sentence Data": "../../data/ENG/en.tok", 
-    "Corpus Size": 1830223 
+    "Corpus Size": 440000
   },
   {
     "Language": "CMN",
@@ -92,7 +92,7 @@
     "num2words Code": "es",
     "charsiu Code": "spa", 
     "Sentence Data": "../../data/ESP/es.tok", 
-    "Corpus Size": 402525 
+    "Corpus Size": 402500
   }, 
   {
     "Language": "ITA",
@@ -100,7 +100,7 @@
     "Keep Characters": ["ː"],
     "num2words Code": "it",
     "Sentence Data": "../../data/ITA/it.tok", 
-    "Corpus Size": 868674 
+    "Corpus Size": 868650 
   }
 ]
 

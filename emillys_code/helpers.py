@@ -8,6 +8,7 @@ import os
 import logging
 from functools import partial
 import re
+from itertools import product
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,7 +30,7 @@ def load_config(language):
 def update_values_in_csv(language_to_update, value, n, value_type, text_type, processing_type,
                          round_digits=3):
     # Validate model type
-    model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "4gram"}.get(n)
+    model = {1: "unigram", 2: "bigram", 3: "trigram", 4: "quadgram"}.get(n)
     if not model:
         raise ValueError("Invalid n value. Only 1, 2, 3, or 4 are allowed.")
 
@@ -234,6 +235,61 @@ def check_data_availability(language, processing_type, config_dict):
     else:
         logging.error(f"❌ Data generation failed")
         return None
+    
+
+def check_expected_values(df): 
+    # Define expected columns 
+    expected_processing_types = ['phones', 'sylls', 'words']
+    text_types = ['within_words', 'across_sentences']
+    n_values = ['unigram', 'bigram', 'trigram', 'quadgram']
+    metrics = ['ID', 'IR', 'SR']
+
+    # Generate expected column names
+    expected_columns = {
+        f"{tt}_{pt}_{metric}_{n}"
+        for tt, pt, n, metric in product(text_types, expected_processing_types, n_values, metrics)
+        if not (tt == 'within_words' and pt == 'words')  # Exclude invalid combo
+    }
+
+    # Find actual columns (ignoring metadata)
+    actual_columns = set(df.columns) - {'Speaker', 'Language', 'Text'}
+
+    # Compare
+    missing = expected_columns - actual_columns
+    extra = actual_columns - expected_columns
+
+    print(f"✅ Total expected columns: {len(expected_columns)}")
+    print(f"✅ Total actual columns: {len(actual_columns)}")
+
+    if missing:
+        print("\n❌ Missing columns:")
+        for col in sorted(missing):
+            print(f"  - {col}")
+    else:
+        print("\n✅ All expected combinations are present.")
+
+    if extra:
+        print("\n⚠️ Extra unexpected columns:")
+        for col in sorted(extra):
+            print(f"  - {col}")
+
+    # Check for entirely empty columns per language
+    result = {}
+    feature_cols = [col for col in df.columns if col not in ['Speaker', 'Language', 'Text']]
+    
+    for lang, group in df.groupby('Language'):
+        empty_cols = [col for col in feature_cols if group[col].isna().all()]
+        if empty_cols:
+            result[lang] = empty_cols
+
+    if result:
+        print("\n⚠️ Columns present but entirely empty (all NaN), per language:")
+        for lang, cols in sorted(result.items()):
+            print(f"  {lang}:")
+            for col in sorted(cols):
+                print(f"    - {col}")
+    else:
+        print("\n✅ No expected columns are entirely empty for any language.")
     
 
 

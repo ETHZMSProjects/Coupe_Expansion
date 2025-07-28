@@ -28,35 +28,37 @@ def parse_to_phones_and_sylls(language, config_dict):
         language (str): The ISO 639-3 language code (e.g., 'FRA').
     """
 
-    # Step 1: Load tokenized text (assuming this is orthographic text, not IPA)
     input_path = config_dict['Sentence Data']
     folder = f"produced_data/{language}"
     
-    try:
-        if not os.path.exists(input_path):
-            raise FileNotFoundError(f"Missing required language corpus for {language}: {input_path}")
-        
-        tqdm.write("📥 Loading corpus data ...")
-        text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-        #text = text[:1000]    
-        
-    except FileNotFoundError as e:
-        logging.error(e)
-        raise 
-
-    if len(text) == 0:
-        raise ValueError("No data loaded. Input file may be empty or incorrectly formatted.")
-    else: tqdm.write(f"✅ Loaded {len(text)} sentences from {input_path}")
-    
-    # Step 2: Check if IPA corpus already exists, if not generate it
+    # Step 1: Check if IPA corpus already exists, if not generate it
     expected_corpus_size = config_dict['Corpus Size']
-    exists, existing_path = ipa_corpus_exists(language, expected_corpus_size)
+    exists, existing_path = get_largest_ipa_corpus(language, expected_corpus_size)
     
     if exists:
         tqdm.write(f"✅ IPA corpus with {expected_corpus_size} sentences for {language} already exists at {existing_path}. Skipping IPA generation.")
         with open(existing_path, "rb") as f:
             ipa_sentences = pickle.load(f)
+
+    # Step 2: If no corpus exists, generate it
     else: 
+        try:
+            if not os.path.exists(input_path):
+                raise FileNotFoundError(f"Missing required language corpus for {language}: {input_path}")
+            
+            tqdm.write("📥 Loading corpus data ...")
+            text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
+            #text = text[:1000]    
+            
+        except FileNotFoundError as e:
+            logging.error(e)
+            raise 
+
+        if len(text) == 0:
+            raise ValueError("No data loaded. Input file may be empty or incorrectly formatted.")
+        else: tqdm.write(f"✅ Loaded {len(text)} sentences from {input_path}")
+
+        # Convert corpus to IPA 
         tokenizer, model = load_charsiu_model() # for fallback ipa generation using CharsiuG2P
         parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
         ipa_sentences = parallel_ipa(text)
@@ -73,7 +75,7 @@ def parse_to_phones_and_sylls(language, config_dict):
     phonemized_data, syllabized_data = [], []
 
     # Get syllable boundaries for that language
-    onsets = get_onsets_ipa(language)
+    onsets = get_onsets_ipa(language, existing_path)
 
     tqdm.write("🔄 Splitting data into phones and syllables ...")
     # Flatten all words from all sentences for batch processing
@@ -271,7 +273,7 @@ def sonori_syllabify(stressed_ipa):
     return []
 
 
-def get_onsets_ipa(language, threshold=.0001):
+def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
     '''
     Takes text in ipa and yields list of onsets and words
 
@@ -284,10 +286,7 @@ def get_onsets_ipa(language, threshold=.0001):
     - Low-frequency onsets are discarded, reducing noise from mis-syllabified or tokenization errors
     '''
 
-    folder = f"produced_data/{language}"
-    ipa_path = f"{folder}/ipa_corpus_{language}.pkl"
-
-    with open(ipa_path, "rb") as f:
+    with open(ipa_corpus_path, "rb") as f:
         ipa_sentences = pickle.load(f)
 
     # Flatten the list of sentences into a single list of words
@@ -374,15 +373,25 @@ def phone_tokenization(word):
     return phones
 
 
-def ipa_corpus_exists(language, expected_size):
+def get_largest_ipa_corpus(language, expected_size):
     folder = f"produced_data/{language}"
     if not os.path.exists(folder):
         return False, None
+
+    max_size = -1
+    best_file = None
+
     for filename in os.listdir(folder):
         if filename.startswith(f"ipa_corpus_{language}_size:"):
             size_part = filename.split("_size:")[-1].replace(".pkl", "")
-            if size_part.isdigit() and int(size_part) == expected_size:
-                return True, os.path.join(folder, filename)
+            if size_part.isdigit():
+                size = int(size_part)
+                if size > max_size:
+                    max_size = size
+                    best_file = filename
+
+    if best_file and max_size > expected_size:
+        return True, os.path.join(folder, best_file)
     return False, None
 
 
