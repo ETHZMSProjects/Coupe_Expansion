@@ -1,5 +1,5 @@
 import os
-import regex as re
+import regex as regex_unicode
 import pickle
 from collections import Counter
 from ipa_conversion import load_charsiu_model, parallelize_ipa_generation
@@ -10,6 +10,8 @@ from pathlib import Path
 from joblib import Parallel, delayed
 from functools import partial
 import os
+import re
+import psutil
 
 
 logging.basicConfig(level=logging.INFO)
@@ -32,13 +34,16 @@ def parse_to_phones_and_sylls(language, config_dict):
     folder = f"produced_data/{language}"
     
     # Step 1: Check if IPA corpus already exists, if not generate it
-    expected_corpus_size = config_dict['Corpus Size']
-    exists, existing_path = get_largest_ipa_corpus(language, expected_corpus_size)
+    largest_corpus_size = config_dict['Corpus Size']
+    exists, is_near_expected, existing_path = get_largest_ipa_corpus(language, largest_corpus_size)
     
     if exists:
-        tqdm.write(f"✅ IPA corpus with {expected_corpus_size} sentences for {language} already exists at {existing_path}. Skipping IPA generation.")
+        tqdm.write(f"✅ IPA corpus for {language} exists at {existing_path}. Skipping IPA generation.")
+        if not is_near_expected: 
+            tqdm.write(f"IPA corpus has limited size. Expected/largest size:{largest_corpus_size}.")
         with open(existing_path, "rb") as f:
             ipa_sentences = pickle.load(f)
+            logging.info(f"📊 Memory after loading pickle: {psutil.Process().memory_info().rss / 1e6:.2f} MB")
 
     # Step 2: If no corpus exists, generate it
     else: 
@@ -48,7 +53,7 @@ def parse_to_phones_and_sylls(language, config_dict):
             
             tqdm.write("📥 Loading corpus data ...")
             text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-            #text = text[:1000]    
+            text = text[:100]    
             
         except FileNotFoundError as e:
             logging.error(e)
@@ -68,65 +73,88 @@ def parse_to_phones_and_sylls(language, config_dict):
         tqdm.write(f"📦 Saving IPA corpus for {language} with {num_sent} sentences ...")
         os.makedirs(folder, exist_ok=True)  # Create the folder if it doesn't exist
         ipa_output_path = f"{folder}/ipa_corpus_{language}_size:{num_sent}.pkl"
+        existing_path = ipa_output_path
         with open(ipa_output_path, "wb") as f:
             pickle.dump(ipa_sentences, f)
     
     # Step 3: Tokenize IPA sentences into phones and syllables
-    phonemized_data, syllabized_data = [], []
 
-    # Get syllable boundaries for that language
-    onsets = get_onsets_ipa(language, existing_path)
+    # Check whether tokenization for this ipa_corpus was already done
 
-    tqdm.write("🔄 Splitting data into phones and syllables ...")
-    # Flatten all words from all sentences for batch processing
-    all_words = []
-    sentence_word_counts = []
+    # Extract the number of sentences from the existing ipa corpus
+    match = re.search(r'_size:(\d+)\.pkl$', str(existing_path))
+    corpus_size_str = match.group(1) if match else "unknown"
+
+    # Construct expected output paths
+    phonized_path = Path(folder) / "phones" / f"phonized_{language}_size:{corpus_size_str}.pkl"
+    syllabified_path = Path(folder) / "sylls" / f"syllabified_{language}_size:{corpus_size_str}.pkl"
+
+    # Skip if both files already exist
+    if phonized_path.exists() and syllabified_path.exists():
+        tqdm.write(f"⏩ Skipping tokenization: phonemized and syllabified data already exist for {language} with size {corpus_size_str}.")
+        return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
     
-    for ipa_sentence in ipa_sentences:
-        sentence_word_counts.append(len(ipa_sentence))
-        all_words.extend(ipa_sentence)
-    
-    # Process ALL words at once in parallel
-    inputs = [(ipa, onsets, language) for ipa in all_words]
-    results = Parallel(n_jobs=15, batch_size=100)(
-        delayed(syllable_tokenization_wrapper)(args) for args in inputs
-    )
-    
-    # Reconstruct sentence structure
-    word_idx = 0
-    
-    for sentence_length in sentence_word_counts:
-        sentence_phones = []
-        sentence_sylls = []
+    # Tokenize into phones and syllables
+    else: 
+
+        phonemized_data, syllabized_data = [], []
+
+        # Get syllable boundaries for that language
+        onsets = get_onsets_ipa(language, existing_path)
+
+        tqdm.write("🔄 Splitting data into phones and syllables ...")
+        # Flatten all words from all sentences for batch processing
+        all_words = []
+        sentence_word_counts = []
         
-        for _ in range(sentence_length):
-            phones, sylls = results[word_idx]
-            sentence_phones.append(phones)
-            sentence_sylls.append(sylls)
-            word_idx += 1
+        for ipa_sentence in ipa_sentences:
+            sentence_word_counts.append(len(ipa_sentence))
+            all_words.extend(ipa_sentence)
+        
+        # Process ALL words at once in parallel
+        inputs = [(ipa, onsets, language) for ipa in all_words]
+        results = Parallel(n_jobs=15, batch_size=100)(
+            delayed(syllable_tokenization_wrapper)(args) for args in inputs
+        )
+        
+        # Reconstruct sentence structure
+        word_idx = 0
+        
+        for sentence_length in sentence_word_counts:
+            sentence_phones = []
+            sentence_sylls = []
             
-        phonemized_data.append(sentence_phones)
-        syllabized_data.append(sentence_sylls)
+            for _ in range(sentence_length):
+                phones, sylls = results[word_idx]
+                sentence_phones.append(phones)
+                sentence_sylls.append(sylls)
+                word_idx += 1
+                
+            phonemized_data.append(sentence_phones)
+            syllabized_data.append(sentence_sylls)
 
-    if any(any(sublist) for sublist in ipa_sentences): 
-        # Save results
-        os.makedirs(f"{folder}/phones", exist_ok=True)
-        os.makedirs(f"{folder}/sylls", exist_ok=True)
+        if any(any(sublist) for sublist in ipa_sentences): 
+            # Save results
+            os.makedirs(f"{folder}/phones", exist_ok=True)
+            os.makedirs(f"{folder}/sylls", exist_ok=True)
 
-        #logging.info(f"text: {text[:20]}")
-        #logging.info(f"ipa: {ipa_sentences[:20]}")
-        logging.info(f"phonemized data: {phonemized_data[:20]}")
-        logging.info(f"syllabized data: {syllabized_data[:20]}")
-        
-        with open(f"{folder}/phones/phonized_{language}.pkl", "wb") as f:
-            pickle.dump(phonemized_data, f)
-        
-        with open(f"{folder}/sylls/syllabified_{language}.pkl", "wb") as f:
-            pickle.dump(syllabized_data, f)
+            #logging.info(f"text: {text[:20]}")
+            #logging.info(f"ipa: {ipa_sentences[:20]}")
+            
+            logging.info(f"phonemized data: {phonemized_data[:20]}")
+            logging.info(f"syllabized data: {syllabized_data[:20]}")
+            
+            with open(phonized_path, "wb") as f:
+                pickle.dump(phonemized_data, f)
 
-        logging.info(f"✅ Tokenization into phones and syllables completed. Data saved to {folder}.")
+            with open(syllabified_path, "wb") as f:
+                pickle.dump(syllabized_data, f)
 
-    else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
+            logging.info(f"✅ Tokenization into phones and syllables completed. Data saved to {folder}.")
+
+        else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
+
+    return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
 
 
 def syllable_tokenization(cleaned_ipa, onsets, language):
@@ -288,6 +316,7 @@ def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
 
     with open(ipa_corpus_path, "rb") as f:
         ipa_sentences = pickle.load(f)
+        logging.info(f"📊 Memory after loading pickle: {psutil.Process().memory_info().rss / 1e6:.2f} MB")
 
     # Flatten the list of sentences into a single list of words
     # skips invalid words
@@ -339,7 +368,7 @@ def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
 
 def phone_tokenization(word): 
     # Unicode grapheme cluster matcher for phones tokenization
-    grapheme_pattern = re.compile(r'\X', re.UNICODE)
+    grapheme_pattern = regex_unicode.compile(r'\X', regex_unicode.UNICODE)
 
     # Tokenize into phones
     segments = [match.group() for match in grapheme_pattern.finditer(word) if match.group() not in (' ', '')]
@@ -374,12 +403,13 @@ def phone_tokenization(word):
 
 
 def get_largest_ipa_corpus(language, expected_size):
-    folder = f"produced_data/{language}"
+    folder = Path(f"produced_data/{language}") 
     if not os.path.exists(folder):
         return False, None
 
     max_size = -1
     best_file = None
+    tolerance = 50
 
     for filename in os.listdir(folder):
         if filename.startswith(f"ipa_corpus_{language}_size:"):
@@ -390,9 +420,13 @@ def get_largest_ipa_corpus(language, expected_size):
                     max_size = size
                     best_file = filename
 
-    if best_file and max_size > expected_size:
-        return True, os.path.join(folder, best_file)
-    return False, None
+    
+    if best_file:
+        best_path = folder / best_file
+        is_near_expected = abs(max_size - expected_size) <= tolerance
+        return True, is_near_expected, best_path
+    else:
+        return False, False, None
 
 
 

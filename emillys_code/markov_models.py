@@ -168,13 +168,13 @@ class MarkovModel:
 
         return ngrams_per_word
 
-    def save_model(self, language, processing_type, text_type):
+    def save_model(self, language, processing_type, text_type, corpus_size_str):
         """
         Save this specific model
         """
         os.makedirs(f"produced_data/{language}/{processing_type}", exist_ok=True)
 
-        with open(f"produced_data/{language}/{processing_type}/{language}_{text_type}_markov_model_{self.n}gram.pkl", "wb") as f:
+        with open(f"produced_data/{language}/{processing_type}/{language}_{text_type}_markov_model_{self.n}gram_{corpus_size_str}.pkl", "wb") as f:
             pickle.dump(self, f)
 
         print(f"\n✅ Saved {self.n}-gram model to 'produced_data/{language}/{processing_type}/'")

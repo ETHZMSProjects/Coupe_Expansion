@@ -9,6 +9,7 @@ import logging
 from functools import partial
 import re
 from itertools import product
+from glob import glob
 
 logging.basicConfig(level=logging.INFO)
 
@@ -167,24 +168,28 @@ def check_data_availability(language, processing_type, config_dict):
         KeyError: If no raw corpus is registered for the language.
     """
 
-    if processing_type not in ['phones', 'sylls']:
-        raise ValueError("❌ Invalid processing type. Use 'phones' or 'sylls'.")
+    if processing_type not in ['phones', 'sylls', 'words']:
+        raise ValueError("❌ Invalid processing type. Use 'phones', 'words' or 'sylls'.")
 
     folder = Path("produced_data") / language / processing_type
-    filename = f"phonized_{language}.pkl" if processing_type == 'phones' else f"syllabified_{language}.pkl"
-    input_path = folder / filename
+    file_pattern = f"{folder}/{'phonized' if processing_type == 'phones' else 'syllabified'}_{language}_size:*.pkl"
+    matches = list(glob(file_pattern))
 
     # Check if the input file exists
-    if not input_path.exists():
-        print(f"❌ No prepared {processing_type} data found for {language} at {input_path}.")
-        sys.stdout.flush() #  Force the print to show up immediately
+    if not matches:
+        print(f"❌ No prepared {processing_type} data found for {language} at {folder} (pattern: {file_pattern}).")
+        sys.stdout.flush()
         if not ask_question(
             f"❓ Run parse_to_phones_and_sylls('{language}') now to generate the required data? [y/n]: ",
             partial(parse_to_phones_and_sylls, config_dict=config_dict),
             language
         ):
-            return None               
-
+            return None  
+        # After generation, check again
+        matches = list(glob(file_pattern))
+        if not matches:
+            print(f"⚠️ Still no data found for {processing_type} after generation.")
+            return None         
 
     ling_unit_count_csv_path = Path("semantically_similar_texts/ling_units_counts.csv"
     )
@@ -278,7 +283,11 @@ def check_expected_values(df):
     feature_cols = [col for col in df.columns if col not in ['Speaker', 'Language', 'Text']]
     
     for lang, group in df.groupby('Language'):
-        empty_cols = [col for col in feature_cols if group[col].isna().all()]
+        empty_cols = [
+            col for col in feature_cols
+            if group[col].apply(lambda x: pd.isna(x) or str(x).strip().lower() in {"", "nan", "none"}).all()
+        ]
+
         if empty_cols:
             result[lang] = empty_cols
 
