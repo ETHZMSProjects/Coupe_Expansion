@@ -15,6 +15,7 @@ from collections import defaultdict
 from process_ipa import merge_clitics, convert_numbers
 import os
 from tqdm import tqdm
+from pathlib import Path
 
 
 # ensure that espeak-ng is discoverable for all subprocesses during that session.
@@ -249,8 +250,6 @@ def get_ipa_espeak(word, espeak_code):
     word = word.strip(string.punctuation + "’‘“”").strip().lower()
 
     if not word:
-        # Skip this word or sign 
-        #logging.warning(f"⚠️ Word became empty after cleaning: '{raw}'")
         return ""
 
     try:
@@ -274,3 +273,33 @@ def get_ipa_espeak(word, espeak_code):
     except Exception as e:
         logging.error(f"❌ espeak-ng crashed on word '{word}': {e}")
         return ""
+    
+
+def get_specific_ipa_corpus(language, desired_size, folder): 
+    folder = Path(folder)
+    if not folder.exists():
+        return False, None
+
+    for file in folder.glob(f"ipa_corpus_{language}_size:*.pkl"):
+        size = int(file.stem.split("_size:")[-1])
+        if size == desired_size:
+            return True, file
+
+    return False, None
+
+def get_largest_ipa_corpus(language, expected_size, folder, tolerance=1000):
+    folder = Path(folder)
+    if not folder.exists():
+        return False, False, None
+
+    candidates = []
+    for file in folder.glob(f"ipa_corpus_{language}_size:*.pkl"):
+        size = int(file.stem.split("_size:")[-1])
+        candidates.append((size, file))
+
+    if not candidates:
+        return False, False, None
+
+    max_size, best_file = max(candidates)
+    is_near_expected = abs(max_size - expected_size) <= tolerance
+    return True, is_near_expected, best_file

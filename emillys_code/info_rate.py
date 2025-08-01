@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import pandas as pd
 import warnings
-from ipa_conversion import load_charsiu_model, parallelize_ipa_generation
+from ipa_conversion import load_charsiu_model, parallelize_ipa_generation, get_largest_ipa_corpus
 from syllabification import syllable_tokenization_wrapper, get_onsets_ipa
 from tqdm import tqdm
 import logging
@@ -89,7 +89,7 @@ def compute_info_rate(info_density, processing_type, language):
 
 
 
-def count_ling_units(language, config_dict):
+def count_ling_units(language, config_dict, folder):
     input_path = "semantically_similar_texts/semantically_similar_texts.csv"
     output_path = "semantically_similar_texts/ling_units_counts.csv"
 
@@ -104,7 +104,10 @@ def count_ling_units(language, config_dict):
         raise
 
     tokenizer, model = load_charsiu_model()
-    onsets = get_onsets_ipa(language)
+
+    largest_corpus_size = config_dict['Corpus Size']
+    _, _, ipa_corpus_path = get_largest_ipa_corpus(language, largest_corpus_size, folder)
+    onsets = get_onsets_ipa(language, ipa_corpus_path)
 
     # Filter rows with respect to language
     df_lang  = df[df["language"] == language].copy()

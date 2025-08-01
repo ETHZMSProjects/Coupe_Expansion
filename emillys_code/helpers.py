@@ -10,6 +10,7 @@ from functools import partial
 import re
 from itertools import product
 from glob import glob
+from IPython.display import display
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,7 +46,7 @@ def update_values_in_csv(language_to_update, value, n, value_type, text_type, pr
     inter_intra_column = f"{text_type}_{processing_type}_{value_type}_{model}"
 
     # File paths
-    base_path ='produced_data'
+    base_path ='produced_data_large_corpus'
     ling_file = os.path.join(base_path, 'ling_unit_comparison.csv')
     inter_intra_file = os.path.join(base_path, 'inter_intra_comparison.csv')
 
@@ -172,71 +173,63 @@ def check_data_availability(language, processing_type, config_dict):
         raise ValueError("❌ Invalid processing type. Use 'phones', 'words' or 'sylls'.")
 
     folder = Path("produced_data") / language / processing_type
-    file_pattern = f"{folder}/{'phonized' if processing_type == 'phones' else 'syllabified'}_{language}_size:*.pkl"
-    matches = list(glob(file_pattern))
+    matches = list(folder.glob(f"{'phonized' if processing_type == 'phones' else 'syllabified'}_{language}_size:*.pkl"))
 
-    # Check if the input file exists
     if not matches:
-        print(f"❌ No prepared {processing_type} data found for {language} at {folder} (pattern: {file_pattern}).")
+        print(f"❌ No prepared {processing_type} data found for {language} at {folder}.")
         sys.stdout.flush()
         if not ask_question(
             f"❓ Run parse_to_phones_and_sylls('{language}') now to generate the required data? [y/n]: ",
-            partial(parse_to_phones_and_sylls, config_dict=config_dict),
+            partial(parse_to_phones_and_sylls, config_dict=config_dict, folder=f"produced_data_large_corpus/{language}"),
             language
         ):
             return None  
-        # After generation, check again
-        matches = list(glob(file_pattern))
+        matches = list(folder.glob(f"{'phonized' if processing_type == 'phones' else 'syllabified'}_{language}_size:*.pkl"))
         if not matches:
             print(f"⚠️ Still no data found for {processing_type} after generation.")
             return None         
 
-    ling_unit_count_csv_path = Path("semantically_similar_texts/ling_units_counts.csv"
-    )
-
+    input_path = matches[0]
+    ling_unit_count_csv_path = Path("semantically_similar_texts/ling_units_counts.csv")
     check_failed = False
 
-    # Check if file exists 
     if not ling_unit_count_csv_path.is_file():
-        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.)")
-        sys.stdout.flush() #  Force the print to show up immediately
+        print(f"❌ Linguistic unit counts CSV not found at: {ling_unit_count_csv_path}.")
+        sys.stdout.flush()
         check_failed = True
-    
     else:  
-        # Load and check content
-        df = pd.read_csv(ling_unit_count_csv_path, sep=None, engine='python')  # auto-detect delimiter
+        df = pd.read_csv(ling_unit_count_csv_path, sep=None, engine='python')
         unit_col = 'n_phones' if processing_type == 'phones' else 'n_syllables'
         required_columns = {"language", unit_col}
 
         if not required_columns.issubset(df.columns) or language not in df["language"].unique():
             print(f"❌ Required columns or language entry missing in data file.")
-            sys.stdout.flush() #  Force the print to show up immediately
+            sys.stdout.flush()
             check_failed = True
         else:
             subset = df[df["language"] == language]
             if subset[unit_col].isnull().any():
                 print(f"❌ Missing values for '{language}' in required data file.")
-                sys.stdout.flush() #  Force the print to show up immediately
+                sys.stdout.flush()
                 check_failed = True
-    
+
     if check_failed:
         if not ask_question(
             f"❓ Run count_ling_units('{language}') now to generate the required data? [y/n]: ",
-            partial(count_ling_units, config_dict=config_dict),
+            partial(count_ling_units, config_dict=config_dict, folder=f"produced_data_large_corpus/{language}"),
             language
         ):
             return None
-        else: 
-            if ling_unit_count_csv_path.is_file():
-                check_failed = False
-    
-    # Final recheck after attempted fixes
+        elif ling_unit_count_csv_path.is_file():
+            check_failed = False
+
+    # Final recheck
     if input_path.exists() and not check_failed:
         print(f"✅ All checks passed. Passing {input_path}")
         return input_path
     elif input_path.exists() and check_failed:
         print(f"⚠️ Data file exists but unit count validation may have failed.")
-        return None  # OR return None depending on strictness
+        return None
     else:
         logging.error(f"❌ Data generation failed")
         return None
@@ -300,6 +293,87 @@ def check_expected_values(df):
     else:
         print("\n✅ No expected columns are entirely empty for any language.")
     
+
+from pathlib import Path
+import os
+
+def clean_corpus_size_files(base_folder, language_codes, corpus_size, processing_types):
+    """
+    Deletes files matching 'size:{corpus_size}' for each language:
+    - In base_folder / language
+    - In base_folder / language / processing_type
+
+    Args:
+        base_folder (str or Path): Base directory (e.g., 'produced_data')
+        language_codes (list of str): List of language ISO codes (e.g., ['DEU', 'ENG'])
+        corpus_size (int or str): Corpus size string to match in filenames (e.g., 100, 500)
+        processing_types (list of str): List of processing type folders (e.g., ['phones', 'sylls'])
+    """
+    base_folder = Path(base_folder)
+    pattern = f"size:{corpus_size}"
+    files_deleted = 0
+
+    for language in language_codes:
+        lang_folder = base_folder / language
+
+        # First: clean files directly in base_folder / language
+        if lang_folder.exists():
+            for file in lang_folder.iterdir():
+                if file.is_file() and pattern in file.name:
+                    try:
+                        file.unlink()
+                        logging.info(f"🗑️ Deleted {file}")
+                        files_deleted += 1
+                    except Exception as e:
+                        logging.warning(f"❌ Could not delete {file.name}: {e}")
+        else:
+            logging.warning(f"⚠️ Folder not found: {lang_folder}")
+
+        # Second: clean files in each processing_type subfolder
+        for processing_type in processing_types:
+            target_folder = lang_folder / processing_type
+            if target_folder.exists():
+                for file in target_folder.iterdir():
+                    if file.is_file() and pattern in file.name:
+                        try:
+                            file.unlink()
+                            logging.info(f"🗑️ Deleted {file}")
+                            files_deleted += 1
+                        except Exception as e:
+                            logging.warning(f"❌ Could not delete {file.name}: {e}")
+            else:
+                logging.warning(f"⚠️ Folder not found: {target_folder}")
+
+    if files_deleted == 0:
+        logging.warning(f"ℹ️ No files matched pattern 'size:{corpus_size}'")
+
+
+def create_minimal_summary(df_summary, corpus_size): 
+
+    print(f"\nResults for corpus size {corpus_size}:\n")
+
+    table = df_summary.pivot_table(
+        values="Value",
+        index=["Language", "UnitType"],
+        columns=["TextType", "Metric", "n"],
+        aggfunc="mean"
+    )
+
+    #  Normalize the color gradient globally across the whole table
+    vmin = df_summary["Value"].min()
+    vmax = df_summary["Value"].max()
+
+    # Display styled table
+    display(
+        table.style
+        .set_table_styles(
+            [{'selector': 'th', 'props': [('text-align', 'center')]}]
+        )
+        .set_properties(**{'text-align': 'center'})
+        .background_gradient(cmap="Blues", vmin=vmin, vmax=vmax)
+        .format("{:.2f}")
+    )
+
 
 
 

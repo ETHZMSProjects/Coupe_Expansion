@@ -2,7 +2,7 @@ import os
 import regex as regex_unicode
 import pickle
 from collections import Counter
-from ipa_conversion import load_charsiu_model, parallelize_ipa_generation
+from ipa_conversion import load_charsiu_model, parallelize_ipa_generation, get_largest_ipa_corpus, get_specific_ipa_corpus
 from process_ipa import merge_diphthongs, is_vowel
 from tqdm import tqdm
 import logging
@@ -11,7 +11,6 @@ from joblib import Parallel, delayed
 from functools import partial
 import os
 import re
-import psutil
 
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +20,7 @@ def syllable_tokenization_wrapper(args):
     return syllable_tokenization(ipa, onsets, language)
 
 # --- Main Processing Function ---
-def parse_to_phones_and_sylls(language, config_dict):
+def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
     """
     Parses sentences to phonemes and syllables using phone_tokenization
     and CharsiuG2P for syllabification.
@@ -30,38 +29,54 @@ def parse_to_phones_and_sylls(language, config_dict):
         language (str): The ISO 639-3 language code (e.g., 'FRA').
     """
 
+    generate_ipa = False
+    is_near_expected = False  # Default: not known or not applicable unless using 'max'
+
     input_path = config_dict['Sentence Data']
-    folder = f"produced_data/{language}"
-    
-    # Step 1: Check if IPA corpus already exists, if not generate it
-    largest_corpus_size = config_dict['Corpus Size']
-    exists, is_near_expected, existing_path = get_largest_ipa_corpus(language, largest_corpus_size)
-    
-    if exists:
-        tqdm.write(f"✅ IPA corpus for {language} exists at {existing_path}. Skipping IPA generation.")
-        if not is_near_expected: 
-            tqdm.write(f"IPA corpus has limited size. Expected/largest size:{largest_corpus_size}.")
+
+    if isinstance(corpus_size, str) and corpus_size.isdigit():
+        corpus_size = int(corpus_size)
+
+    if isinstance(corpus_size, int):
+        found, existing_path = get_specific_ipa_corpus(language, int(corpus_size), folder)
+    elif corpus_size == 'max':
+        expected_size = config_dict['Corpus Size']
+        found, is_near_expected, existing_path = get_largest_ipa_corpus(language, expected_size, folder)
+        if found:
+            tqdm.write(f"✅ Found largest IPA corpus for {language}: {existing_path}")
+            if not is_near_expected:
+                tqdm.write(f"⚠️ Corpus size differs from largest possible size ({expected_size}).")
+
+    if found:
         with open(existing_path, "rb") as f:
             ipa_sentences = pickle.load(f)
-            logging.info(f"📊 Memory after loading pickle: {psutil.Process().memory_info().rss / 1e6:.2f} MB")
+    else:
+        generate_ipa = True
 
     # Step 2: If no corpus exists, generate it
-    else: 
+    if generate_ipa: 
         try:
             if not os.path.exists(input_path):
                 raise FileNotFoundError(f"Missing required language corpus for {language}: {input_path}")
             
-            tqdm.write("📥 Loading corpus data ...")
+            #tqdm.write("📥 Loading corpus data ...")
+
             text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
-            text = text[:100]    
+
+            if isinstance(corpus_size, int) and corpus_size > len(text):
+                tqdm.write(f"⚠️ Requested {corpus_size} sentences, but only {len(text)} available. Using all available data.")
             
+            if isinstance(corpus_size, int):
+                text = text[:corpus_size]  # strip based on desired (limited) size
+
         except FileNotFoundError as e:
             logging.error(e)
-            raise 
+            raise
 
         if len(text) == 0:
             raise ValueError("No data loaded. Input file may be empty or incorrectly formatted.")
-        else: tqdm.write(f"✅ Loaded {len(text)} sentences from {input_path}")
+        else:
+            tqdm.write(f"📥 Loaded {len(text)} sentences from {input_path}")
 
         # Convert corpus to IPA 
         tokenizer, model = load_charsiu_model() # for fallback ipa generation using CharsiuG2P
@@ -71,7 +86,7 @@ def parse_to_phones_and_sylls(language, config_dict):
         # Save ipa sentences
         num_sent = len(ipa_sentences) # ipa corpus size 
         tqdm.write(f"📦 Saving IPA corpus for {language} with {num_sent} sentences ...")
-        os.makedirs(folder, exist_ok=True)  # Create the folder if it doesn't exist
+        Path(folder).mkdir(parents=True, exist_ok=True) # Create the folder if it doesn't exist
         ipa_output_path = f"{folder}/ipa_corpus_{language}_size:{num_sent}.pkl"
         existing_path = ipa_output_path
         with open(ipa_output_path, "wb") as f:
@@ -113,8 +128,10 @@ def parse_to_phones_and_sylls(language, config_dict):
         
         # Process ALL words at once in parallel
         inputs = [(ipa, onsets, language) for ipa in all_words]
+
         results = Parallel(n_jobs=15, batch_size=100)(
-            delayed(syllable_tokenization_wrapper)(args) for args in inputs
+            delayed(syllable_tokenization_wrapper)(args)
+            for args in tqdm(inputs, desc=f"🔠 Tokenizing {language}")
         )
         
         # Reconstruct sentence structure
@@ -135,8 +152,8 @@ def parse_to_phones_and_sylls(language, config_dict):
 
         if any(any(sublist) for sublist in ipa_sentences): 
             # Save results
-            os.makedirs(f"{folder}/phones", exist_ok=True)
-            os.makedirs(f"{folder}/sylls", exist_ok=True)
+            (phonized_path.parent).mkdir(parents=True, exist_ok=True)
+            (syllabified_path.parent).mkdir(parents=True, exist_ok=True)
 
             #logging.info(f"text: {text[:20]}")
             #logging.info(f"ipa: {ipa_sentences[:20]}")
@@ -316,7 +333,6 @@ def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
 
     with open(ipa_corpus_path, "rb") as f:
         ipa_sentences = pickle.load(f)
-        logging.info(f"📊 Memory after loading pickle: {psutil.Process().memory_info().rss / 1e6:.2f} MB")
 
     # Flatten the list of sentences into a single list of words
     # skips invalid words
@@ -400,33 +416,6 @@ def phone_tokenization(word):
         i += 1
 
     return phones
-
-
-def get_largest_ipa_corpus(language, expected_size):
-    folder = Path(f"produced_data/{language}") 
-    if not os.path.exists(folder):
-        return False, None
-
-    max_size = -1
-    best_file = None
-    tolerance = 50
-
-    for filename in os.listdir(folder):
-        if filename.startswith(f"ipa_corpus_{language}_size:"):
-            size_part = filename.split("_size:")[-1].replace(".pkl", "")
-            if size_part.isdigit():
-                size = int(size_part)
-                if size > max_size:
-                    max_size = size
-                    best_file = filename
-
-    
-    if best_file:
-        best_path = folder / best_file
-        is_near_expected = abs(max_size - expected_size) <= tolerance
-        return True, is_near_expected, best_path
-    else:
-        return False, False, None
 
 
 

@@ -16,7 +16,7 @@ class MarkovModel:
         """
         self.n = n # n-gram size
         self.ngram_counts = defaultdict(int)  # Bigram or n-gram counts
-        self.prefix_counts = defaultdict(int)  # Prefix counts for normalization
+        self.prefix_counts = defaultdict(int)  # Counts how many times that exact prefix occurs, across all n-grams
         self.cond_probs = defaultdict(float)
         self.entropy_map = defaultdict(float) # entropy_map[prefix] holds H(Y|X=prefix)
         self.total_ngrams = 0
@@ -55,10 +55,10 @@ class MarkovModel:
         vocab_size = len(vocabulary)
 
         # Conditional probabilities with additive smoothing
-        for prefix in self.prefix_counts:
-            prefix_count = self.prefix_counts[prefix]
+        for prefix in self.prefix_counts:  # Each prefix/context x
+            prefix_count = self.prefix_counts[prefix] # count(x)
             for next_token in vocabulary: 
-                count_xy = self.ngram_counts.get((prefix, next_token), 0)
+                count_xy = self.ngram_counts.get((prefix, next_token), 0) # count(x, y)
                 smoothed_prob = (count_xy + alpha) / (prefix_count + alpha * vocab_size)
                 self.cond_probs[(prefix, next_token)] = smoothed_prob
     
@@ -168,16 +168,16 @@ class MarkovModel:
 
         return ngrams_per_word
 
-    def save_model(self, language, processing_type, text_type, corpus_size_str):
+    def save_model(self, language, folder, processing_type, text_type, corpus_size_str):
         """
         Save this specific model
         """
-        os.makedirs(f"produced_data/{language}/{processing_type}", exist_ok=True)
+        os.makedirs(f"{folder}/{processing_type}", exist_ok=True)
 
-        with open(f"produced_data/{language}/{processing_type}/{language}_{text_type}_markov_model_{self.n}gram_{corpus_size_str}.pkl", "wb") as f:
+        with open(f"{folder}/{processing_type}/{language}_{text_type}_markov_model_{self.n}gram_{corpus_size_str}.pkl", "wb") as f:
             pickle.dump(self, f)
 
-        print(f"\n✅ Saved {self.n}-gram model to 'produced_data/{language}/{processing_type}/'")
+        print(f"\n✅ Saved {self.n}-gram model to '{folder}/{processing_type}/'")
 
 
 
