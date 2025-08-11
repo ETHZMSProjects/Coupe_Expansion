@@ -16,6 +16,7 @@ from process_ipa import merge_clitics, convert_numbers
 import os
 from tqdm import tqdm
 from pathlib import Path
+from more_itertools import chunked
 
 
 # ensure that espeak-ng is discoverable for all subprocesses during that session.
@@ -63,7 +64,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
         list of list of str: Sentences as lists of IPA transcriptions.
     """
     # Normalize and flatten
-    text = [[unicodedata.normalize("NFKC", word) for word in sentence]  for sentence in text]
+    text = [[unicodedata.normalize("NFC", word) for word in sentence]  for sentence in text]
 
     sentences_cleaned = []
 
@@ -102,7 +103,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
 
 def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
 
-    espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA', 'ESP'] else False
+    espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA'] else False
         
     if not word_list_tagged:
         return []
@@ -126,6 +127,9 @@ def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
             ]
             logging.debug(f"jierba: {word_list}")
 
+    # Prepare cleaning
+    clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
+    
     ###  Use espeak to get IPA
     if espeak: 
         espeak_code = config_dict['espeak Code']
@@ -143,38 +147,44 @@ def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
             #if not ipa:
                 #print(f"🧪 EMPTY: '{word}' → '{ipa}'")
 
-        clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
         ipa_results = [clean(ipa) for ipa in raw_ipa]
     
     else: 
          ### Use g2p model to generate IPA
 
+        # 1. Prepare Charsiu input
         # CharsiuG2P requires a language prefix and a space after the colon
         # Example: "<eng>: hello" or "<fra>: bonjour"
         charsiu_code = config_dict['charsiu Code']
         tagged_words = [f"<{charsiu_code}>: {word.lower()}" for word in word_list] 
-        ipa_results = []
+        word_chunks = list(chunked(tagged_words, 128)) 
+
+        # 2. Prepare model
         model.eval()
+        device = 'cpu'  # force CPU
+        model = model.to(device)
+        
+        # 4. Process batches serially 
+        ipa_results_nested = []
 
-        # Move model to GPU once if available
-        if torch.cuda.is_available():
-            model = model.to('cuda')
+        for batch in tqdm(word_chunks, desc=f"🔠 Converting {language} corpus to IPA using CharsiuG2P", unit="batch"):
+            encoded = tokenizer(batch, padding=True, return_tensors='pt')
+            encoded = {k: v.to(device) for k, v in encoded.items()}
 
-        with torch.no_grad():
-            for batch in tqdm(chunked(tagged_words, 128), desc=f"🔠 Converting {language} corpus to IPA using CharsiuG2P", unit="batch"):
-                encoded = tokenizer(batch, padding=True, return_tensors='pt')
-                if torch.cuda.is_available():
-                    encoded = {k: v.to('cuda') for k, v in encoded.items()}
-                preds = model.generate(
-                    input_ids=encoded["input_ids"],
-                    attention_mask=encoded["attention_mask"],
-                    num_beams=1,
-                    max_length=50,
-                    do_sample=False
-                )
-                decoded = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)
-                cleaned_batch = [clean_ipa(ipa, True, '') for ipa in decoded]
-                ipa_results.extend([ipa for ipa in cleaned_batch if ipa])
+            preds = model.generate(
+                input_ids=encoded["input_ids"],
+                attention_mask=encoded["attention_mask"],
+                num_beams=1,
+                max_length=50,
+                do_sample=False
+            )
+
+            decoded = tokenizer.batch_decode(preds.tolist(), skip_special_tokens=True)
+            cleaned = [clean(ipa) for ipa in decoded]
+            ipa_results_nested.append(cleaned)
+
+        # 5. Flatten the results and remove empty entries
+        ipa_results = [ipa for chunk in ipa_results_nested for ipa in chunk if ipa]
 
     # filter out empty entries in both the original and the ipa word list
     filtered = [(w, ipa, sid) for w, ipa, sid in zip(word_list, ipa_results, sentence_ids) if ipa]
@@ -246,7 +256,7 @@ def get_espeak_ipa_batch(chunk, espeak_code):
 def get_ipa_espeak(word, espeak_code):
     """Get IPA transcription from espeak-ng."""
 
-    word = unicodedata.normalize("NFKC", word)
+    word = unicodedata.normalize("NFC", word)
     word = word.strip(string.punctuation + "’‘“”").strip().lower()
 
     if not word:
@@ -301,5 +311,5 @@ def get_largest_ipa_corpus(language, expected_size, folder, tolerance=1000):
         return False, False, None
 
     max_size, best_file = max(candidates)
-    is_near_expected = abs(max_size - expected_size) <= tolerance
-    return True, is_near_expected, best_file
+    within_tokerance = abs(max_size - expected_size) <= tolerance
+    return True, within_tokerance, best_file

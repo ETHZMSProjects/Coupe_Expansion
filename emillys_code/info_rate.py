@@ -11,6 +11,7 @@ from functools import partial
 import re
 from collections import defaultdict
 import ast
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
@@ -69,10 +70,19 @@ def compute_info_rate(info_density, processing_type, language):
         elif processing_type == 'phones':
             n_units = row['n_phones']
         elif processing_type == 'words':
-            ipa_list = ast.literal_eval(row["ipa"])  
-            n_units = len(ipa_list)
+            try:
+                ipa_list = ast.literal_eval(row["ipa"])
+            except (ValueError, SyntaxError) as e:
+                logging.warning(f"⚠️ Failed to parse 'ipa' field for {language}: {row['ipa']}")
+                continue
+
+            if isinstance(ipa_list, list) and all(isinstance(w, str) for w in ipa_list):
+                n_units = len(ipa_list)
+            else:
+                logging.warning(f"⚠️ Malformed 'ipa' entry for {language}: {ipa_list}")
+                continue
         else: 
-            warnings.warn("Unknown processing_type. Use 'sylls' or 'phones'.")
+            warnings.warn("Unknown processing_type. Use 'sylls', 'phones', or 'words'.")
             return []
 
         phonationtime = row['phonationtime']

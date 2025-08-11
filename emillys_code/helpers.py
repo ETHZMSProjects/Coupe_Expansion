@@ -28,6 +28,29 @@ def load_config(language):
         print(f"Language '{language}' is not supported in language_config.json.")
         return None
 
+def validate_structure(data, text_type, processing_type, context="root", nesting=None):
+    # Set expected nesting 
+    if nesting is None:
+        if processing_type in ("sylls", "phones"):
+            nesting = [list, list, list, str]  # sentences → words → units (strings)
+        elif processing_type == "words":
+            nesting = [list, list, str]        # sentences → words (strings)
+        else:
+            raise ValueError(f"Invalid processing type: {processing_type}")
+
+    expected_type = nesting[0]
+
+    # Check type at this level
+    if not isinstance(data, expected_type):
+        raise TypeError(f"{context} expected {expected_type.__name__}, got {type(data).__name__}")
+
+    # If more levels remain, recurse
+    if len(nesting) > 1:
+        for i, elem in enumerate(data):
+            validate_structure(elem, text_type, processing_type, f"{context}[{i}]", nesting[1:])
+
+
+
 
 def update_values_in_csv(language_to_update, value, n, value_type, text_type, processing_type,
                          round_digits=3):

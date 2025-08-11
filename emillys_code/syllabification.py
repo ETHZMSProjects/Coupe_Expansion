@@ -82,6 +82,7 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
         tokenizer, model = load_charsiu_model() # for fallback ipa generation using CharsiuG2P
         parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
         ipa_sentences = parallel_ipa(text)
+        print(f"IPA was generated: {ipa_sentences}")
 
         # Save ipa sentences
         num_sent = len(ipa_sentences) # ipa corpus size 
@@ -107,7 +108,7 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
     # Skip if both files already exist
     if phonized_path.exists() and syllabified_path.exists():
         tqdm.write(f"⏩ Skipping tokenization: phonemized and syllabified data already exist for {language} with size {corpus_size_str}.")
-        return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
+        return Path(existing_path), phonized_path, syllabified_path, corpus_size_str, is_near_expected
     
     # Tokenize into phones and syllables
     else: 
@@ -171,7 +172,7 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
 
         else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
 
-    return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
+    return Path(existing_path), phonized_path, syllabified_path, corpus_size_str, is_near_expected
 
 
 def syllable_tokenization(cleaned_ipa, onsets, language):
