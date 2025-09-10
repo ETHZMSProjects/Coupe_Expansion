@@ -1,23 +1,39 @@
-from nltk.util import ngrams
-from collections import defaultdict
 import os
 import pickle
 import warnings
 import math
-import logging
-from typing import List, Dict, Tuple, Optional
+
 import numpy as np
 import json
+
+from typing import List, Dict, Tuple, Optional, Any
+from collections import defaultdict
+from nltk.util import ngrams
+
 from info_rate import compute_info_rate
 from helpers import validate_structure
 
+import logging
 logging.basicConfig(level=logging.INFO)
 
 
 class BaseNgramModel: 
-    def __init__(self, n): 
+    """
+    Base class for n-gram language models with closed-vocabulary counting.
+
+    This class builds n-gram counts and prefix counts from structured input,
+    supports both sentence-level streams (across words) and word-internal
+    streams (within words), and maintains a closed vocabulary anchored to
+    tokens seen in the training set.
+    """
+    def __init__(self, n: int) -> None:
         """
-        Initialize an n-gram Markov model.
+        Initialize an n-gram model with counting structures.
+
+        Parameters
+        ----------
+        n : int
+            N-gram order (n ≥ 1).
         """
         self.n = n # n-gram order
         self.ngram_counts = defaultdict(int)  # n-gram counts
@@ -28,10 +44,25 @@ class BaseNgramModel:
         self.total_prefixes = 0 # Total number of unique prefixes
         self.train_vocab = set() # training vocabulary (closed vocab)
     
-    def build(self, set_type, data, text_type):
+    def build(self, set_type: str, data: list, text_type: str) -> None:
         """
-        Build ngrams for within word transitions or sentence-level transitions at the level of the chosen linguistic unit.
-        Optionally use pre-tuned lambdas_override for interpolation.
+        Count n-grams and prefixes, with closed-vocabulary handling.
+
+        Parameters
+        ----------
+        set_type : {'train', 'dev', 'test'}
+            When 'train', tokens expand the closed vocabulary.
+            Otherwise, tokens not in the vocabulary are mapped to '<unk>'.
+        data : list
+            Structured corpus. For `across_sentences`: List[List[str]] or
+            List[List[List[str]]]. For `within_words`: List[List[List[str]]] or
+            List[List[str]] with each element a word as list of units.
+        text_type : {'across_sentences', 'within_words'}
+
+        Raises
+        ------
+        ValueError
+            If no n-grams can be generated from `data` and `text_type`.
         """
         ngram_list = self.generate_ngrams(data, text_type)
         if not ngram_list:
@@ -61,36 +92,57 @@ class BaseNgramModel:
 
         self.total_prefixes = len(self.prefix_counts)
     
-    def generate_ngrams(self, data, text_type):
+    def generate_ngrams(self, data: list, text_type: str) -> list[Tuple[str, ...]]:
+        """
+        Generate n-grams according to `text_type`.
+
+        Parameters
+        ----------
+        data : list
+            Corpus structure as described in `build`.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode selection.
+
+        Returns
+        -------
+        list of tuple
+            List of n-gram tuples.
+
+        Warns
+        -----
+        UserWarning
+            If `text_type` is unrecognized.
+        """
         if text_type == "across_sentences":  
             return self.generate_ngrams_for_sent(data)
         elif text_type == "within_words":
             return self.generate_ngrams_for_words(data)
         else: 
             warnings.warn("Unknown text_type. Use 'across_sentences' or 'within_words'.")
-            return
+            return []
     
-    def generate_ngrams_for_sent(self, input_list):
+    def generate_ngrams_for_sent(self, input_list: list) -> list[Tuple[str, ...]]:
         """
         Generate n-grams across words within each sentence, but not across sentences.
          Auto-detects if input is:
         - List[List[str]] where each str is a word → compute word-level n-grams
         - List[List[List[str]]] where each inner list is a word (sequence of phonemes/syllables) → compute unit-level n-grams
         
-        input_list is a List of sentences:
-        - each sentence is List of words
-        - each word is a string or a list of phonemes or syllables
-        
-        Example:
-        input_list = [
-            [ ['p','u','ʁ'], ['l','ə'], ['ʁ','w','a','j','o','m'] ],  # sentence 1
-            [ ['l','e'], ['ɡ','ɛ','ʁ'], ['d','ə'] ],                  # sentence 2
-            ...
-        ]
-        
-        The function concatenates the words within each sentence:
-        sentence_stream = ['p','u','ʁ','l','ə','ʁ','w','a','j','o','m']
-        Then makes n-grams over this stream.
+       Parameters
+        ----------
+        input_list : list
+            List of sentences; each sentence is a list of words; each word is
+            either a string or a list of units (phones/syllables).
+
+        Returns
+        -------
+        list of tuple
+            N-grams extracted from each sentence stream.
+
+        Raises
+        ------
+        ValueError
+            If the structure of `input_list` is unsupported.
         """
         # Detect input type by checking the first "word" in the first sentence
         first_word = input_list[0][0]
@@ -119,20 +171,23 @@ class BaseNgramModel:
         #logging.info(f"ngram examples for across_sentences: {ngrams_per_sentence[:15]}")
         return ngrams_per_sentence
 
-    def generate_ngrams_for_words(self, input_list):
+    def generate_ngrams_for_words(self, input_list: list) -> list[Tuple[str, ...]]:
         """
-        Generate n-grams within each word only (no cross-word transitions).
-        Supports two input types:
-        - List of words: List[List[str]]
-        - List of sentences: List[List[List[str]]]
-            - Each sentence is a list of words
-            - Each word is a list of phonemes
+        Make n-grams within words only (no cross-word transitions).
 
-        Example: 
-        input_list = [
-            [['p','u','ʁ'], ['l','ə'], ['ʁ','w','a','j','o','m']],  # sentence 1
-            [['l','e'], ['ɡ','ɛ','ʁ'], ['d','ə']]                   # sentence 2
-        ]
+        Supports:
+          • List[List[str]] (already flattened list of words as unit-lists)
+          • List[List[List[str]]] (sentences → words → units)
+
+        Parameters
+        ----------
+        input_list : list
+            Either a list of words (each a list of units) or a list of sentences.
+
+        Returns
+        -------
+        list of tuple
+            N-grams extracted from each word.
         """
 
          # Detect if input is list of sentences (list of list of list of str)
@@ -152,9 +207,23 @@ class BaseNgramModel:
         return ngrams_per_word
 
 
-    def save_model(self, language, folder, processing_type, text_type, corpus_size_str):
+    def save_model(self, language: str, folder: str, processing_type: str,
+                   text_type: str, corpus_size_str: str) -> None:
         """
-        Save this specific model
+        Saves this specific model, preserving a consistent filename schema.
+
+        Parameters
+        ----------
+        language : str
+            ISO-3 language code.
+        folder : str
+            Base directory for output.
+        processing_type : str
+            Unit type (e.g., 'sylls', 'phones', 'words').
+        text_type : str
+            'across_sentences' or 'within_words'.
+        corpus_size_str : str
+            Label for corpus size used in training (for traceability).
         """
         os.makedirs(f"{folder}/{processing_type}", exist_ok=True)
 
@@ -164,12 +233,50 @@ class BaseNgramModel:
         print(f"\n✅ Saved {self.n}-gram model to '{folder}/{processing_type}/'")
 
     @staticmethod
-    def load(path):
+    def load(path: str) -> "BaseNgramModel":
+        """
+        Load a pickled model from disk.
+
+        Parameters
+        ----------
+        path : str
+            Path to a .pkl file produced by `save_model`.
+
+        Returns
+        -------
+        BaseNgramModel
+            Deserialized model instance.
+        """
         with open(path, "rb") as f:
             return pickle.load(f)
 
+MarkovModel = BaseNgramModel  # Alias for backward compatibility
+
 class MLEModel(BaseNgramModel):
-    def build(self, set_type, data, text_type):
+    """
+    Maximum-Likelihood (unsmoothed) n-gram model.
+
+    Extends `BaseNgramModel` by converting counts to conditional probabilities
+    via empirical relative frequencies.
+    """
+    def build(self, set_type: str, data: list, text_type: str) -> None:
+        """
+        Build counts (base) and compute MLE conditional probabilities.
+
+        Parameters
+        ----------
+        set_type : {'train', 'dev', 'test'}
+            Closed-vocabulary handling as in `BaseNgramModel.build`.
+        data : list
+            Structured corpus as described in `BaseNgramModel.build`.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode selection.
+
+        Notes
+        -----
+        • After calling, `self.cond_probs[(prefix, token)]` contains P_ML(token|prefix).
+        • Logs a warning if per-prefix probabilities deviate from 1 due to rounding.
+        """
         super().build(set_type, data, text_type)  # use base build to count
         
         # Compute MLE probabilities
@@ -184,26 +291,78 @@ class MLEModel(BaseNgramModel):
             if abs(total - 1.0) > 1e-6:
                 logging.warning(f"Probabilities for prefix {prefix} sum to {total:.4f}")
 
-    def get_probability(self, prefix, token):
+    def get_probability(self, prefix: Tuple[str, ...], token: str) -> float:
+        """
+        Return the empirical probability P(token | prefix).
+
+        Parameters
+        ----------
+        prefix : tuple of str
+            History of length n-1.
+        token : str
+            Next symbol.
+
+        Returns
+        -------
+        float
+            Empirical conditional probability or 0.0 if unseen.
+        """
         return self.cond_probs.get((prefix, token), 0.0)
     
 
 class JelinekMercerModel(MLEModel):
-    def __init__(self, n: int, lambda_grid: Optional[List[float]] = None):
+    """
+    Jelinek–Mercer (JM) smoothed n-gram model with grid-search tuning.
+
+    Provides:
+      • Pre-computation of MLE models for all orders 1..n
+      • Recursive JM interpolation across orders
+      • Grid-search tuning of λ per order using dev perplexity
+      • Closed-vocabulary handling and OOV mapping to '<unk>'
+    """
+    def __init__(self, n: int, lambda_grid: Optional[List[float]] = None) -> None:
+        """
+        Initialize a JM model with default lambda grids.
+
+        Parameters
+        ----------
+        n : int
+            N-gram order.
+        lambda_grid : list of float, optional
+            Custom grid for all orders; if None, per-order defaults are used.
+        """
         super().__init__(n)
         # Default: smaller lambdas for higher orders (more backoff)
         self.grids = {
-            1: [0.75, 0.9, 1.0],  # λ₁ — unigram
-            2: [0.8, 0.9, 1.0],  # λ₂ — bigram # from Malagutti et al. (2024)
-            3: [0.5, 0.6, 0.7],   # λ₃ — trigram
-            4: [0.05, 0.1, 0.3, 0.5]    # λ₄ — 4-gram
+            1: [0.8, 0.9, 1.0],  # λ₁ — unigram
+            2: [0.7, 0.8, 0.9, 1.0],  # λ₂ — bigram 
+            3: [0.7, 0.8, 0.9, 1.0],   # λ₃ — trigram
+            4: [0.6, 0.7, 0.8, 0.9]    # λ₄ — 4-gram
         }
+        if lambda_grid is not None:
+            # Override with a single shared grid if provided
+            self.grids = {k: lambda_grid[:] for k in range(1, n + 1)}
+        self.p_jm_by_order: Dict[int, Dict[Tuple[Tuple[str, ...], str], float]] = {}
+        self.lambdas: Dict[int, float] = {}
+        self.models_by_order: Dict[int, Dict[str, Any]] = {}
 
-        self.p_jm_by_order = {}
-        self.lambdas = {}
-        self.models_by_order = {}  # stores all orders' MLE models
+    def pre_compute_ngram_models(self, data: list, text_type: str) -> None:
+        """
+        Pre-compute MLE models for all orders 1..n on the given data.
 
-    def pre_compute_ngram_models(self, data, text_type):
+        Parameters
+        ----------
+        data : list
+            Training corpus structure as described in the base class.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode selection.
+
+        Notes
+        -----
+        • Populates `self.models_by_order[order]` with 'prefix_counts',
+          'ngram_counts', and 'p_ml'.
+        • Unifies `self.train_vocab` across orders.
+        """
         self.models_by_order = {}
         self.train_vocab = set()
         self.text_type = text_type
@@ -219,13 +378,26 @@ class JelinekMercerModel(MLEModel):
             self.train_vocab.update(model.train_vocab)
 
 
-    def fit(self, data: List[str], text_type: str, lambdas: Dict[int, float]):
-        """Fit JM model with given lambdas."""
+    def fit(self, data: list, text_type: str, lambdas: Dict[int, float]) -> None:
+        """
+        Fit the JM-smoothed model using provided λ per order.
 
+        Parameters
+        ----------
+        data : list
+            Training data.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode.
+        lambdas : dict[int, float]
+            Mapping {1: λ₁, 2: λ₂, ..., n: λₙ}, each in [0, 1].
+
+        Raises
+        ------
+        ValueError
+            If keys of `lambdas` do not match 1..n.
+        """
         # builds MLE models on full dataset
         self.pre_compute_ngram_models(data, text_type)  
-
-        logging.info(f"Training vocabulary size: {len(self.train_vocab)}")
 
         expected_keys = list(range(1, self.n+1))
         if not isinstance(lambdas, dict) or sorted(lambdas.keys()) != expected_keys:
@@ -234,19 +406,42 @@ class JelinekMercerModel(MLEModel):
 
         self.p_jm_by_order = self.jm_interpolate(check_normalization=True)
 
-    def train_dev_test_split_sentences(self, data, text_type, processing_type, dev_frac=0.02, test_frac=0.02, seed=42):
+    def train_dev_test_split_sentences(
+        self,
+        data: list,
+        text_type: str,
+        processing_type: str,
+        dev_frac: float = 0.02,
+        test_frac: float = 0.02,
+        seed: int = 42
+    ) -> tuple[list, list, list]:
         """
-        Split data into train, dev, and test sets, preserving original structure.
+        Split sentences into train/dev/test, preserving nested structure.
 
         Parameters
         ----------
-        dev_frac : float
-            Fraction of data for development (validation) set.
-        test_frac : float
-            Fraction of data for final held-out test set.
-        """
-        #logging.info(f"Data Preview: {data[:2]}")
+        data : list
+            Corpus (list of sentences) to split.
+        text_type : str
+            Structure descriptor for downstream validation.
+        processing_type : str
+            Unit type descriptor for downstream validation.
+        dev_frac : float, default 0.02
+            Fraction assigned to development set.
+        test_frac : float, default 0.02
+            Fraction assigned to test set.
+        seed : int, default 42
+            RNG seed for reproducibility.
 
+        Returns
+        -------
+        (list, list, list)
+            (train, dev, test) splits with original nesting retained.
+
+        Notes
+        -----
+        • Calls `validate_structure` on each split for early error detection.
+        """
         n_sent = len(data)
         rng = np.random.default_rng(seed)
         idx = np.arange(n_sent)
@@ -370,6 +565,24 @@ class JelinekMercerModel(MLEModel):
         return p_jm_by_order
 
     def get_probability(self, prefix: Tuple[str, ...], token: str) -> float:
+        """
+        Return the JM-smoothed probability P(token | prefix), backing off.
+
+        The method searches orders n, n-1, …, 1. If unseen across all orders,
+        returns the zerogram uniform probability over the closed vocabulary.
+
+        Parameters
+        ----------
+        prefix : tuple of str
+            History tokens (length n-1 for order n).
+        token : str
+            Next token.
+
+        Returns
+        -------
+        float
+            Smoothed probability in [0, 1].
+        """
         order = len(prefix) + 1
         uniform_prob = 1.0 / len(self.train_vocab) if self.train_vocab else 0.0
 
@@ -416,6 +629,11 @@ class JelinekMercerModel(MLEModel):
         -------
         float
             Perplexity score for the dataset
+        
+        Raises
+        ------
+        ValueError
+            If no n-grams can be generated from `data`.
         """
 
         if set_type != "train":
@@ -443,9 +661,32 @@ class JelinekMercerModel(MLEModel):
         cross_entropy_bits = -total_logp / total_tokens
         return 2 ** cross_entropy_bits  # perplexity in bits
 
-    def tune_lambdas(self, set_type, train_data: List[str], dev_data: List[str], text_type: str):
-        """Grid search for best lambdas."""
-        
+    def tune_lambdas(
+        self,
+        set_type: str,
+        train_data: list,
+        dev_data: list,
+        text_type: str
+    ) -> tuple[Dict[int, float], float]:
+        """
+        Grid-search λ per order to minimize dev perplexity.
+
+        Parameters
+        ----------
+        set_type : str
+            Used downstream for perplexity (OOV handling).
+        train_data : list
+            Training split for MLE estimation.
+        dev_data : list
+            Development split for selection.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode.
+
+        Returns
+        -------
+        (dict, float)
+            (best_lambdas, best_dev_perplexity).
+        """
         # Precompute MLE models for all orders for train_data
         self.pre_compute_ngram_models(train_data, text_type)
         best_lambdas = {}
@@ -470,7 +711,7 @@ class JelinekMercerModel(MLEModel):
                     best_lambda = lam
 
             logging.info(
-                f"[Tune for {set_type}] λ_{order} = {best_lambda} | dev PPL={best_ppl:.3f}"
+                f"[Tune] λ_{order} = {best_lambda} | dev PPL={best_ppl:.3f}"
             )
 
             best_lambdas[order] = best_lambda
@@ -482,16 +723,20 @@ class JelinekMercerModel(MLEModel):
         
         return best_lambdas, best_ppl_overall
         
-    def compute_conditional_entropy(self, use_jm=True):
+    def compute_conditional_entropy(self, use_jm: bool = True) -> float:
         """
-        Compute conditional entropy H(Y|X) = Σ_x P(x) * H(Y|X=x)
-        Note that while P(y|x) is smoothed, P(x) uses empirical counts 
+        Compute conditional entropy H(Y|X) in bits using empirical P(X).
 
         Parameters
         ----------
-        use_jm : bool
-            If True, use JM-smoothed probabilities (p_jm_by_order).
-            If False, use raw MLE probabilities (p_ml from models_by_order).
+        use_jm : bool, default True
+            If True, use JM-smoothed conditional probabilities.
+            If False, use raw MLE probabilities.
+
+        Returns
+        -------
+        float
+            H(Y|X) = Σ_x P(x) ⋅ H(Y|X=x), with P(x) from empirical prefix counts.
         """
         order = self.n
         if use_jm:
@@ -518,9 +763,60 @@ class JelinekMercerModel(MLEModel):
 
     
 
-    def fit_with_tuning(self, data, text_type, processing_type, language, dev_frac=0.02, test_frac=0.02, seed=42):
+    def fit_with_tuning(
+        self,
+        data: list,
+        text_type: str,
+        processing_type: str,
+        language: str,
+        dev_frac: float = 0.02,
+        test_frac: float = 0.02,
+        seed: int = 42
+    ) -> dict:
         """
-        Tune lambdas on dev set, retrain on train+dev, evaluate on test set.
+        Full pipeline: split → tune λ → fit → evaluate → compute info metrics.
+
+        Steps
+        -----
+        1) Validate structure (raises early on nesting issues).
+        2) Split into train/dev/test with fixed RNG seed.
+        3) Tune λ on dev via perplexity.
+        4) Refit JM on train+dev.
+        5) Compute information density H(Y|X).
+        6) Evaluate PPL on test.
+        7) Compute information rate and speech rate via `compute_info_rate`.
+
+        Parameters
+        ----------
+        data : list
+            Corpus.
+        text_type : {'across_sentences', 'within_words'}
+            Generation mode.
+        processing_type : {'sylls', 'phones', 'words'}
+            Unit type for downstream info-rate computation.
+        language : str
+            ISO-3 code for info-rate aggregation and file labels.
+        dev_frac : float, default 0.02
+        test_frac : float, default 0.02
+        seed : int, default 42
+
+        Returns
+        -------
+        dict
+            {
+              'model': self,
+              'best_lambdas': dict,
+              'test_perplexity': float,
+              'dev_perplexity': float,
+              'info_density': float,
+              'info_rate_values': list[float],
+              'speech_rate_values': list[float]
+            }
+
+        Raises
+        ------
+        TypeError, ValueError
+            If `validate_structure` fails prior to splitting.
         """
         # Check nesting 
         try:
@@ -543,8 +839,6 @@ class JelinekMercerModel(MLEModel):
         best_lambdas, dev_ppl = self.tune_lambdas('train', train_data, dev_data, text_type)
         if best_lambdas is None:
             raise ValueError(f"No best lambdas found for n={self.n}.")
-        
-        logging.info(f"Best λs for n={self.n}: {best_lambdas} (dev ppl={dev_ppl:.3f})")
 
         # 3. Retrain on train+dev
         train_plus_dev = train_data + dev_data
@@ -554,8 +848,7 @@ class JelinekMercerModel(MLEModel):
         info_density = self.compute_conditional_entropy(use_jm=True)
 
         # 5. Evaluate on test set
-        test_ppl = self.perplexity('test', test_data, text_type)
-        logging.info(f"[Final Eval] Best λs: {best_lambdas} |Test PPL={test_ppl:.3f} | {text_type}")    
+        test_ppl = self.perplexity('test', test_data, text_type)    
 
         # 6. Compute Information Rate
         info_rate_values, speech_rate_values = compute_info_rate(
@@ -564,7 +857,7 @@ class JelinekMercerModel(MLEModel):
 
         # 7. Save tuned lambdas
         lambda_values = [best_lambdas[i] for i in range(1, self.n + 1)]
-        with open(f"best_lambdas_n{self.n}.json", "w") as f:
+        with open(f"produced_data_large_corpus/lambdas/best_lambdas_n{self.n}_{processing_type}_{text_type}.json", "w") as f:
             json.dump({
                 "lambdas_dict": best_lambdas,
                 "lambdas_list": lambda_values,
@@ -582,10 +875,28 @@ class JelinekMercerModel(MLEModel):
             "speech_rate_values": speech_rate_values
         }
     
-    def map_oov_to_unk(self, data):
+    def map_oov_to_unk(self, data: list) -> list:
         """
-        Replace tokens not in training vocab with <unk>.
-        Works for both 'within_words' and 'across_sentences' formats.
+        Map out-of-vocabulary tokens to '<unk>' while preserving structure.
+
+        Works for both:
+          • across_sentences: List[List[str]] (words) or List[List[List[str]]]
+          • within_words:     List[List[List[str]]]
+
+        Parameters
+        ----------
+        data : list
+            Structured corpus.
+
+        Returns
+        -------
+        list
+            Same structure as input, with OOV tokens replaced by '<unk>'.
+
+        Raises
+        ------
+        ValueError
+            If a token structure is neither str nor list[str].
         """
         mapped = []
 

@@ -1,25 +1,22 @@
 import string
 import subprocess
-import unicodedata
 import regex as re
-import torch
+import os
 import unicodedata
-import jieba
-import logging
-import unicodedata
-from more_itertools import chunked
-from transformers import T5ForConditionalGeneration, AutoTokenizer
 from functools import partial
 from joblib import Memory
 from collections import defaultdict
-from process_ipa import merge_clitics, convert_numbers
-import os
 from tqdm import tqdm
 from pathlib import Path
 from more_itertools import chunked
+import logging
+
+from transformers import T5ForConditionalGeneration, AutoTokenizer
+from process_ipa import merge_clitics, convert_numbers
 
 
-# ensure that espeak-ng is discoverable for all subprocesses during that session.
+# Ensure that espeak-ng is discoverable for all subprocesses during that session.
+# ! Change this path to your local installation of espeak-ng
 os.environ["PATH"] = "/home/emilly/.local/bin:" + os.environ["PATH"]
 
 # Caching (optional)
@@ -36,8 +33,17 @@ CHARSIU_MODEL_NAME = 'charsiu/g2p_multilingual_byT5_small_100' #'charsiu/g2p_mul
 charsiu_tokenizer = None
 charsiu_model = None
 
-def load_charsiu_model():
-    """Loads the CharsiuG2P model and tokenizer, or retrieves them if already loaded."""
+def load_charsiu_model() -> tuple:
+    """
+    Load (or reuse) the CharsiuG2P tokenizer and model.
+
+    Returns
+    -------
+    tuple
+        (tokenizer, model) where:
+          - tokenizer : transformers.PreTrainedTokenizer
+          - model     : transformers.PreTrainedModel
+    """
     global charsiu_tokenizer, charsiu_model
     if charsiu_model is None or charsiu_tokenizer is None:
         charsiu_tokenizer = AutoTokenizer.from_pretrained('google/byt5-small')
@@ -49,19 +55,34 @@ def load_charsiu_model():
     return charsiu_tokenizer, charsiu_model
 
 
-def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
+def parallelize_ipa_generation(
+    text: list[list[str]],
+    language: str,
+    tokenizer,
+    model,
+    config_dict: dict
+) -> list[list[str]]:
     """
-    Flattens sentences into words, batch-generates IPA using G2P, 
-    and reconstructs the sentence structure.
-    
-    Args:
-        text (list of list of str): Sentences as lists of words.
-        language (str): Language code (e.g., "FRA").
-        tokenizer: HuggingFace tokenizer.
-        model: HuggingFace model.
+    Generate international phonetic alphabet (IPA) for sentences in parallel,
+    preserving sentence structure.
 
-    Returns:
-        list of list of str: Sentences as lists of IPA transcriptions.
+    Parameters
+    ----------
+    text : list of list of str
+        Sentences as lists of word tokens.
+    language : str
+        ISO-3 language code (e.g., 'FRA', 'ENG').
+    tokenizer : transformers.PreTrainedTokenizer
+        Tokenizer used for the G2P model.
+    model : transformers.PreTrainedModel
+        Charsiu G2P model.
+    config_dict : dict
+        Configuration dict passed to downstream cleaners.
+
+    Returns
+    -------
+    list of list of str
+        IPA transcriptions per sentence.
     """
     # Normalize and flatten
     text = [[unicodedata.normalize("NFC", word) for word in sentence]  for sentence in text]
@@ -87,7 +108,7 @@ def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
             logging.warning(f"Skipped sentence {i}: {sentence}")
 
     # Batch IPA generation
-    ipa_flat, updated_word_list, updated_sentence_ids = generate_ipa(flat_words_tagged, language, tokenizer, model, config_dict)
+    ipa_flat, updated_sentence_ids = generate_ipa(flat_words_tagged, language, tokenizer, model, config_dict)
 
     # Reconstruct sentence structure
     sentence_map = defaultdict(list)
@@ -101,31 +122,48 @@ def parallelize_ipa_generation(text, language, tokenizer, model, config_dict):
     return ipa_sentences
 
 
-def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
+def generate_ipa(
+    word_list_tagged: list[tuple[str, int]],
+    language: str,
+    tokenizer,
+    model,
+    config_dict: dict
+) -> tuple[list[str], list[int]]:
+    """
+    Generate IPA for a word list using espeak-ng or CharsiuG2P.
 
-    espeak = True if language in ['ENG', 'FRA', 'CMN', 'DEU', 'ITA'] else False
+    Parameters
+    ----------
+    word_list_tagged : list of (str, int)
+        Words with their sentence IDs.
+    language : str
+        ISO-3 language code.
+    tokenizer : transformers.PreTrainedTokenizer
+    model : transformers.PreTrainedModel
+    config_dict : dict
+        Must include:
+          - 'espeak Code'   : str
+          - 'charsiu Code'  : str
+          - 'Keep Characters': iterable
+
+    Returns
+    -------
+    tuple
+        (ipa_list, updated_word_list, updated_sentence_ids)
+    """
+    # Decide for which languages to use espeak and not CharsiuG2P
+    espeak = True if language in ['ENG', 'FRA', 'DEU'] else False
         
     if not word_list_tagged:
-        return []
+        return [], []
     
+    # Unzip the word list and sentence IDs
     word_list, sentence_ids = zip(*word_list_tagged)  # both are tuples
     word_list_original = list(word_list)
     sentence_ids = list(sentence_ids)
 
      # Convert numbers to words
     word_list = convert_numbers(word_list_original, language, config_dict)
-    
-    if language in ['CMN']:
-            # Tokenize each item in the word list using jieba
-            tokenized = [list(jieba.cut(word, cut_all=False)) for word in word_list]
-            word_list = [tok for sublist in tokenized for tok in sublist]
-
-            # Expand sentence_ids to match tokenized list
-            sentence_ids = [
-                sid for tokens, sid in zip(tokenized, sentence_ids)
-                for _ in tokens
-            ]
-            logging.debug(f"jierba: {word_list}")
 
     # Prepare cleaning
     clean = partial(clean_ipa, as_string=True, delimiter='', config_dict=config_dict)
@@ -152,7 +190,7 @@ def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
     else: 
          ### Use g2p model to generate IPA
 
-        # 1. Prepare Charsiu input
+        # Prepare Charsiu input
         # CharsiuG2P requires a language prefix and a space after the colon
         # Example: "<eng>: hello" or "<fra>: bonjour"
         charsiu_code = config_dict['charsiu Code']
@@ -189,19 +227,40 @@ def generate_ipa(word_list_tagged, language, tokenizer, model, config_dict):
     # filter out empty entries in both the original and the ipa word list
     filtered = [(w, ipa, sid) for w, ipa, sid in zip(word_list, ipa_results, sentence_ids) if ipa]
     ipa_list = [ipa for _, ipa, _ in filtered]
-    updated_word_list = [w for w, _, _ in filtered]
     updated_sentence_ids = [sid for _, _, sid in filtered]
-    return ipa_list, updated_word_list, updated_sentence_ids
+    return ipa_list, updated_sentence_ids
 
 
 
 # Regex for grapheme clusters
 GRAPHEME_RE = re.compile(r'\X', re.UNICODE)
 
-def clean_ipa(ipa_string, as_string, delimiter, config_dict):
+def clean_ipa(
+    ipa_string: str | list[str],
+    as_string: bool,
+    delimiter: str,
+    config_dict: dict
+) -> str | list[str] | None:
     """
-    Cleans a given IPA string by removing non-phonemic characters,
-    while preserving delimiter and language-specific meaningful IPA symbols.
+    Clean an IPA string by removing non-phonemic symbols. 
+    Preserves a small set of special characters for a language, specified 
+    in 'Keep Characters' of config_dict.
+
+    Parameters
+    ----------
+    ipa_string : str or list of str
+        Raw IPA string or tokens.
+    as_string : bool
+        If True, return a single string. Otherwise, return a list.
+    delimiter : str
+        Delimiters to preserve.
+    config_dict : dict
+        Must include 'Keep Characters'.
+
+    Returns
+    -------
+    str | list of str | None
+        Cleaned IPA. None if all content is stripped.
     """
     keep_chars = set(config_dict["Keep Characters"]) 
 
@@ -249,12 +308,40 @@ def clean_ipa(ipa_string, as_string, delimiter, config_dict):
         
     return "".join(cleaned_as_list) if as_string else cleaned_as_list
 
-def get_espeak_ipa_batch(chunk, espeak_code):
-    """Run espeak-ng on a batch of words, one at a time."""
+def get_espeak_ipa_batch(chunk: list[str], espeak_code: str) -> list[str]:
+    """
+    Run espeak-ng on a batch of words.
+
+    Parameters
+    ----------
+    chunk : list of str
+        Words to transcribe.
+    espeak_code : str
+        espeak-ng voice code.
+
+    Returns
+    -------
+    list of str
+        IPA outputs (empty strings for failures).
+    """
     return [get_ipa_espeak(word, espeak_code) for word in chunk]
 
-def get_ipa_espeak(word, espeak_code):
-    """Get IPA transcription from espeak-ng."""
+def get_ipa_espeak(word: str, espeak_code: str) -> str:
+    """
+    Transcribe a single word to IPA using espeak-ng.
+
+    Parameters
+    ----------
+    word : str
+        Input word.
+    espeak_code : str
+        espeak-ng voice code.
+
+    Returns
+    -------
+    str
+        IPA transcription. Empty if espeak fails.
+    """
 
     word = unicodedata.normalize("NFC", word)
     word = word.strip(string.punctuation + "’‘“”").strip().lower()
@@ -285,7 +372,24 @@ def get_ipa_espeak(word, espeak_code):
         return ""
     
 
-def get_specific_ipa_corpus(language, desired_size, folder): 
+def get_specific_ipa_corpus(language: str, desired_size: int, folder: str | Path) -> tuple[bool, Path | None]:
+    """
+    Locate an IPA corpus file of exact size.
+
+    Parameters
+    ----------
+    language : str
+        ISO-3 language code.
+    desired_size : int
+        Exact corpus size.
+    folder : str or Path
+        Directory to search.
+
+    Returns
+    -------
+    tuple
+        (found_exact, file_path) where file_path is None if not found.
+    """
     folder = Path(folder)
     if not folder.exists():
         return False, None
@@ -297,7 +401,34 @@ def get_specific_ipa_corpus(language, desired_size, folder):
 
     return False, None
 
-def get_largest_ipa_corpus(language, expected_size, folder, tolerance=1000):
+def get_largest_ipa_corpus(
+    language: str,
+    expected_size: int,
+    folder: str | Path,
+    tolerance: int = 1000
+) -> tuple[bool, bool, Path | None]:
+    """
+    Find the largest IPA corpus for a language.
+    Expected size is specified in config_dict and passed here.
+    The function accepts a tolerance parameter to allow for some
+    divergence from the expected size.
+
+    Parameters
+    ----------
+    language : str
+        ISO-3 language code.
+    expected_size : int
+        Target size.
+    folder : str or Path
+        Directory to search.
+    tolerance : int, default=1000
+        Allowed difference from expected_size.
+
+    Returns
+    -------
+    tuple
+        (found_any, within_tolerance, best_file)
+    """
     folder = Path(folder)
     if not folder.exists():
         return False, False, None

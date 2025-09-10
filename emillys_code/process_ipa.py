@@ -12,20 +12,38 @@ logging.basicConfig(level=logging.INFO)
 # Compile regex once
 DIGIT_RE = re.compile(r'\d+')
 
-def convert_numbers(word_list, language, config_dict): 
+def convert_numbers(word_list: list[str], language: str, config_dict: dict) -> list[str]:
     """
-    Converts numeric digits in words to their spoken form using num2words,
-    only for supported languages and only when digits are present.
+    Convert digit substrings to spoken forms using `num2words`, language-aware.
 
-    Args:
-        word_list (List[str]): List of words to process.
-        language (str): ISO language code (e.g., 'ENG').
-        config_dict (dict): Dictionary containing num2words language code.
+    Parameters
+    ----------
+    word_list : list of str
+        Tokens to process; only tokens containing ASCII digits are considered.
+    language : str
+        ISO-3 language code used to gate conversion (e.g., 'ENG', 'FRA').
+        Conversion is skipped for {"YUE", "CMN", "VIE"}.
+    config_dict : dict
+        Must contain:
+          - "num2words Code": str, language code understood by `num2words`
+            (e.g., 'en', 'fr', 'de').
 
-    Returns:
-        List[str]: Words with numbers converted to words where applicable.
+    Returns
+    -------
+    list of str
+        Same-length list where digit substrings are replaced by their
+        language-specific names when supported; otherwise unchanged.
+
+    Notes
+    -----
+    • Robust to `num2words` NotImplementedError: falls back to original token.
+    • Non-digit tokens are not touched (fast path).
     """
-    num2word_code = config_dict["num2words Code"]
+    try: 
+        num2word_code = config_dict["num2words Code"]
+    except KeyError:
+        logging.error(f"num2words Code not found in config for language '{language}'. Skipping number conversion.")
+        return word_list
 
     if language in ["YUE", "CMN", "VIE"]: 
         return word_list  # Skip number conversion for these languages
@@ -44,7 +62,28 @@ def convert_numbers(word_list, language, config_dict):
     return [replace_digits(w) if any(c.isdigit() for c in w) else w for w in word_list]
 
 
-def merge_clitics(tokens, language):
+def merge_clitics(tokens: list[str], language: str) -> list[str]:
+    """
+    Merge simple clitic + host patterns in tokenized text (language-specific).
+
+    Parameters
+    ----------
+    tokens : list of str
+        Token sequence (already segmented on whitespace/punctuation).
+    language : str
+        ISO-3 language code. Currently:
+          • 'FRA': merges sequences like ["l'", "ami"] → ["l'ami"].
+          • Other languages: no change.
+
+    Returns
+    -------
+    list of str
+        Token sequence with language-specific clitics merged.
+
+    Notes
+    -----
+    • This is a minimal heuristic (apostrophe-final token + following token).
+    """
     if language == "FRA":
         merged = []
         skip = False
@@ -64,11 +103,56 @@ def merge_clitics(tokens, language):
 # Diacritics and length marker pattern
 IPA_DIACRITICS = re.compile(r"[ˈˌːˑ˥˦˧˨˩̯́̀̂̃̄̆̇]")
     
-def strip_diacritics(phone):
-    """Remove IPA diacritics and length markers."""
+def strip_diacritics(phone: str) -> str:
+    """
+    Remove IPA diacritics and length markers from a phone symbol.
+
+    Parameters
+    ----------
+    phone : str
+        IPA phone (may include primary/secondary stress, length, tone/diacritics).
+
+    Returns
+    -------
+    str
+        Base phone with characters in `IPA_DIACRITICS` removed.
+
+    Notes
+    -----
+    • Preserves segmental letters; removes markers like ˈ, ˌ, ː, tone diacritics.
+    """
     return IPA_DIACRITICS.sub('', phone)
 
-def is_glide_vowel_combo(phone, glides, monophthongs, diphthongs):
+def is_glide_vowel_combo(
+    phone: str,
+    glides: set[str],
+    monophthongs: set[str],
+    diphthongs: set[str]
+) -> bool:
+    """
+    Test if a phone string matches a glide + vowel combination.
+
+    Parameters
+    ----------
+    phone : str
+        Candidate phone sequence (diacritics already stripped or not).
+    glides : set of str
+        Set of glide symbols (e.g., {'j', 'w', 'ɥ'}).
+    monophthongs : set of str
+        Base vowel symbols considered monophthongs.
+    diphthongs : set of str
+        Vowel sequences considered diphthongs (for membership checks).
+
+    Returns
+    -------
+    bool
+        True if `phone` begins with a glide and the remainder is a vowel
+        (monophthong or diphthong), False otherwise.
+
+    Notes
+    -----
+    • Internally applies `strip_diacritics` before matching.
+    """
     base = strip_diacritics(phone)
     return (
         len(base) >= 2 and
@@ -76,9 +160,25 @@ def is_glide_vowel_combo(phone, glides, monophthongs, diphthongs):
         base[1:] in monophthongs.union(diphthongs)
     )
 
-def is_vowel(phone):
+def is_vowel(phone: str) -> bool:
     """
-    Returns True if phone is a vowel (monophthong, diphthong, triphthong, nasal, long vowel, or glide-vowel).
+    Determine whether an IPA phone is vowel-like (mono/di/triphthong, nasalized, or glide–vowel).
+
+    Parameters
+    ----------
+    phone : str
+        IPA phone (may include diacritics/length markers).
+
+    Returns
+    -------
+    bool
+        True if `phone` belongs to monophthongs, diphthongs, triphthongs,
+        nasal-vowel sets, or forms a valid glide–vowel combo.
+
+    Notes
+    -----
+    • Uses `get_monophthong_sets()` and `get_diphthong_sets()` to form
+      comprehensive vowel inventories; strips diacritics before lookup.
     """
     base = strip_diacritics(phone)
 
@@ -94,24 +194,54 @@ def is_vowel(phone):
         is_glide_vowel_combo(base, glides, monophthongs, DIPHTHONGS) # Check for glide-vowel combinations
     )
 
-def match_with_or_without_marker(candidate, diphthong_set):
+def match_with_or_without_marker(candidate: str, diphthong_set: set[str]) -> bool:
+    """
+    Match a candidate sequence against a diphthong inventory with diacritic tolerance.
+
+    Parameters
+    ----------
+    candidate : str
+        Candidate IPA string (may include length/diacritic markers).
+    diphthong_set : set of str
+        Canonical diphthong strings without diacritics/length.
+
+    Returns
+    -------
+    bool
+        True if `candidate` is in `diphthong_set` either as-is or after
+        `strip_diacritics(candidate)`, else False.
+    """
     return candidate in diphthong_set or strip_diacritics(candidate) in diphthong_set
     
-def merge_diphthongs(phones, language):
+def merge_diphthongs(phones: list[str], language: str) -> list[str]:
     """
-    Merges diphthongs and triphthongs in a list of IPA phones into single tokens for syllabification.
-    Handles English, German, and French diphthongs/triphthongs with proper prioritization.
-    
-    Prioritization:
-    1. Triphthongs (3 phones) first
-    2. Core diphthongs (vowel + vowel) over glide + vowel
-    3. Glide + vowel combinations
-    
-    Args:
-        phones (List[str]): A list of phone-level IPA.
-    
-    Returns:
-        List[str]: A new list with diphthongs/triphthongs merged as single items.
+    Merge diphthongs and triphthongs into single tokens with priority rules.
+
+    Priority (applied left-to-right):
+      1) Triphthongs (3-segment sequences)
+      2) Core diphthongs (vowel + vowel)
+      3) Glide + vowel diphthongs
+      4) Vowel + glide diphthongs
+
+    Parameters
+    ----------
+    phones : list of str
+        IPA phone sequence to merge.
+    language : str
+        ISO-3 language code; augments core diphthongs for:
+          • 'FRA' → nasal vowel sequences
+          • 'DEU' → umlaut-related sequences
+
+    Returns
+    -------
+    list of str
+        New sequence where recognized (tri)diphthongs are merged.
+
+    Notes
+    -----
+    • Prevents breaking a triphthong starting at i+1 by merging a diphthong at i.
+    • Compares both raw strings and diacritic-stripped forms.
+    • Does not alter consonant clusters.
     """
     
     triphthongs, core_diphthongs, glide_vowel_diphthongs, vowel_glide_diphthongs, german_umlauts, french_nasals = get_diphthong_sets()
@@ -182,7 +312,26 @@ def merge_diphthongs(phones, language):
     
     return merged
 
-def get_monophthong_sets():
+def get_monophthong_sets() -> tuple[set[str], set[str], set[str]]:
+    """
+    Return canonical monophthongs, glides, and nasalized vowel components.
+
+    Returns
+    -------
+    tuple of sets
+        (
+          monophthongs,
+          glide_components,
+          nasal_vowel_components
+        )
+
+    Notes
+    -----
+    • Monophthong inventory follows standard IPA chart coverage for high→low,
+      front→back vowels.
+    • Nasal vowel components include French-style nasalized vowels and common
+      alternate notations.
+    """
     
     monophtongs = {
     'i', 'y', 'ɨ', 'ʉ', 'ɯ', 'u',
@@ -202,7 +351,30 @@ def get_monophthong_sets():
     return monophtongs, glide_components, nasal_vowel_components
     
     
-def get_diphthong_sets():
+def get_diphthong_sets() -> tuple[set[str], set[str], set[str], set[str], set[str], set[str]]:
+    """
+    Return curated sets for tri/diphthongs across ENG/DEU/FRA (and common patterns).
+
+    Returns
+    -------
+    tuple of sets
+        (
+          triphthongs,
+          core_diphthongs,
+          glide_vowel_diphthongs,
+          vowel_glide_diphthongs,
+          german_umlaut_diphthongs,
+          french_nasal_diphthongs
+        )
+
+    Notes
+    -----
+    • Triphthongs prioritize glide/schwa/rhotic realizations typical in English;
+      includes limited gliding French forms and permissive German variants.
+    • Core diphthongs are vowel+vowel (incl. schwa/ɐ sequences and r-vocalization).
+    • Glide–vowel and vowel–glide sets include j/w/ɥ transitions and language-specific
+      additions (umlauts for German).
+    """
 
         
     # TRIPHTHONGS: Vowel + Glide + Schwa/Rhotic (highest priority)

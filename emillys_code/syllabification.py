@@ -1,36 +1,108 @@
-import os
 import regex as regex_unicode
 import pickle
 from collections import Counter
-from ipa_conversion import load_charsiu_model, parallelize_ipa_generation, get_largest_ipa_corpus, get_specific_ipa_corpus
-from process_ipa import merge_diphthongs, is_vowel
 from tqdm import tqdm
-import logging
 from pathlib import Path
 from joblib import Parallel, delayed
 from functools import partial
 import os
 import re
+from typing import List, Tuple, Callable, Optional, Sequence, Union
 
+from ipa_conversion import load_charsiu_model, parallelize_ipa_generation, get_largest_ipa_corpus, get_specific_ipa_corpus
+from process_ipa import merge_diphthongs, is_vowel
 
+import logging
 logging.basicConfig(level=logging.INFO)
 
-def syllable_tokenization_wrapper(args):
-    ipa, onsets, language = args
-    return syllable_tokenization(ipa, onsets, language)
+TokenizationResult = Tuple[list[str], list[str]]
+
+def syllable_tokenization_wrapper(args: tuple[str, list[str], str]) -> TokenizationResult:  
+    """
+    Thin wrapper to unpack arguments and call `syllable_tokenization`.
+
+    Parameters
+    ----------
+    args : tuple
+        (ipa, onsets, language) where:
+          - ipa : str
+              IPA word (already cleaned).
+          - onsets : list[str] | set[str]
+              Legal onset inventory for the language.
+          - language : str
+              ISO-3 language code.
+
+    Returns
+    -------
+    tuple[list[str], list[str]]
+        (phones, syllables) produced by `syllable_tokenization`.
+    """
+    try:
+        ipa, onsets, language = args
+        return syllable_tokenization(ipa, onsets, language)
+    except Exception as e:
+        logging.error(f"Tokenization failed for {args}: {e}")
+        return ([], [])  # fallback: still iterable
 
 # --- Main Processing Function ---
-def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
+def parse_to_phones_and_sylls(
+    language: str,
+    config_dict: dict,
+    folder: str,
+    corpus_size: int | str
+) -> tuple[Path, Path, Path, str, bool]:
     """
-    Parses sentences to phonemes and syllables using phone_tokenization
-    and CharsiuG2P for syllabification.
+    Build (or load) an IPA corpus, then tokenize to phones and syllables.
 
-    Args:
-        language (str): The ISO 639-3 language code (e.g., 'FRA').
+    Pipeline
+    --------
+    1) Try to load an existing IPA corpus:
+         - exact size via `get_specific_ipa_corpus`
+         - or largest available via `get_largest_ipa_corpus` when corpus_size='max'
+    2) If not found, load sentences from `config_dict['Sentence Data']`,
+       generate IPA with CharsiuG2P, and persist as a cached pickle.
+    3) Derive legal onsets via `get_onsets_ipa`.
+    4) Tokenize all words in parallel using `syllable_tokenization`.
+    5) Save phonemized and syllabified data under `folder/phones` and `folder/sylls`.
+
+    Parameters
+    ----------
+    language : str
+        ISO-3 language code (e.g., 'FRA').
+    config_dict : dict
+        Must include:
+          - 'Sentence Data' : path to plain-text sentence file (one per line)
+          - Charsiu/espeak settings used by downstream helpers
+    folder : str
+        Output/corpus cache directory.
+    corpus_size : int or 'max'
+        If int: target number of sentences to load/generate.
+        If 'max': use the largest available cached IPA corpus.
+
+    Returns
+    -------
+    tuple
+        (
+          ipa_corpus_path : Path,
+          phonized_path   : Path,
+          syllabified_path: Path,
+          corpus_size_str : str,   # size used in filenames
+          is_near_expected: bool   # only meaningful for 'max' path
+        )
+
+    Raises
+    ------
+    FileNotFoundError
+        If the sentence source file is missing when generation is needed.
+    ValueError
+        If loaded text is empty or incorrectly formatted.
     """
 
     generate_ipa = False
     is_near_expected = False  # Default: not known or not applicable unless using 'max'
+    ipa_sentences: Optional[list[list[str]]] = None
+    existing_path: Optional[Path] = None
+    found: bool
 
     input_path = config_dict['Sentence Data']
 
@@ -38,16 +110,22 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
         corpus_size = int(corpus_size)
 
     if isinstance(corpus_size, int):
-        found, existing_path = get_specific_ipa_corpus(language, int(corpus_size), folder)
+        found, p = get_specific_ipa_corpus(language, int(corpus_size), folder)
+        existing_path = Path(p) if p is not None else None
     elif corpus_size == 'max':
         expected_size = config_dict['Corpus Size']
-        found, is_near_expected, existing_path = get_largest_ipa_corpus(language, expected_size, folder)
+        found, is_near_expected, p = get_largest_ipa_corpus(language, expected_size, folder)
+        existing_path = Path(p) if p is not None else None
         if found:
             tqdm.write(f"✅ Found largest IPA corpus for {language}: {existing_path}")
             if not is_near_expected:
                 tqdm.write(f"⚠️ Corpus size differs from largest possible size ({expected_size}).")
-
+    else:
+        raise ValueError(f"Invalid corpus_size: {corpus_size}. Must be int or 'max'.")
+    
     if found:
+        if existing_path is None:
+            raise RuntimeError("Invariant violated: found=True but existing_path is None.")
         with open(existing_path, "rb") as f:
             ipa_sentences = pickle.load(f)
     else:
@@ -82,16 +160,18 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
         tokenizer, model = load_charsiu_model() # for fallback ipa generation using CharsiuG2P
         parallel_ipa = partial(parallelize_ipa_generation, language=language, tokenizer=tokenizer, model=model, config_dict=config_dict)
         ipa_sentences = parallel_ipa(text)
-        print(f"IPA was generated: {ipa_sentences}")
 
         # Save ipa sentences
         num_sent = len(ipa_sentences) # ipa corpus size 
         tqdm.write(f"📦 Saving IPA corpus for {language} with {num_sent} sentences ...")
         Path(folder).mkdir(parents=True, exist_ok=True) # Create the folder if it doesn't exist
         ipa_output_path = f"{folder}/ipa_corpus_{language}_size:{num_sent}.pkl"
-        existing_path = ipa_output_path
+        existing_path = Path(ipa_output_path)
         with open(ipa_output_path, "wb") as f:
             pickle.dump(ipa_sentences, f)
+
+    if existing_path is None or ipa_sentences is None:
+        raise RuntimeError("existing_path or ipa_sentences not initialized.")
     
     # Step 3: Tokenize IPA sentences into phones and syllables
 
@@ -108,7 +188,7 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
     # Skip if both files already exist
     if phonized_path.exists() and syllabified_path.exists():
         tqdm.write(f"⏩ Skipping tokenization: phonemized and syllabified data already exist for {language} with size {corpus_size_str}.")
-        return Path(existing_path), phonized_path, syllabified_path, corpus_size_str, is_near_expected
+        return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
     
     # Tokenize into phones and syllables
     else: 
@@ -127,13 +207,24 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
             sentence_word_counts.append(len(ipa_sentence))
             all_words.extend(ipa_sentence)
         
-        # Process ALL words at once in parallel
-        inputs = [(ipa, onsets, language) for ipa in all_words]
-
-        results = Parallel(n_jobs=15, batch_size=100)(
+        # Process words in parallel
+        inputs: List[tuple[str, list[str], str]] = [(ipa, onsets, language) for ipa in all_words]
+        
+        tasks = [
             delayed(syllable_tokenization_wrapper)(args)
-            for args in tqdm(inputs, desc=f"🔠 Tokenizing {language}")
-        )
+                for args in tqdm(inputs, desc=f"🔠 Tokenizing {language}")
+        ]
+        
+        out = Parallel(n_jobs=15, batch_size=100)(tasks)
+
+        # Runtime validation + normalization to satisfy both Pylance and robustness
+        results: List[TokenizationResult] = []
+
+        for r in out:
+            if r is None or not isinstance(r, tuple) or len(r) != 2:
+                raise TypeError("syllable_tokenization_wrapper must return (phones: list[str], sylls: list[str])")
+            phones, sylls = r
+            results.append((list(phones), list(sylls)))
         
         # Reconstruct sentence structure
         word_idx = 0
@@ -172,12 +263,42 @@ def parse_to_phones_and_sylls(language, config_dict, folder, corpus_size):
 
         else: logging.warning(f"⚠️ Failed to parse to phones and syllables")
 
-    return Path(existing_path), phonized_path, syllabified_path, corpus_size_str, is_near_expected
+    return existing_path, phonized_path, syllabified_path, corpus_size_str, is_near_expected
 
 
-def syllable_tokenization(cleaned_ipa, onsets, language):
+def syllable_tokenization(cleaned_ipa: str, onsets: set[str] | list[str], language: str) -> tuple[list[str], list[str]]:
     """
-    Performs automatic syllabification of a word using IPA transcriptions and language-specific phonotactic constraints.
+    Syllabify a single IPA word using maximal-onset with legal onset inventory.
+
+    Algorithm (per word)
+    --------------------
+    1) Segment to phones (`phone_tokenization`), then merge diphthongs/triphthongs.
+    2) Iterate left→right:
+         - Find next vowel nucleus.
+         - Assign maximal legal onset (from `onsets`) to current syllable.
+         - Inter-vocalic consonants not part of the next onset become current coda.
+         - If no next vowel, remaining phones form final coda.
+    3) If no vowel is found, return a single “fallback” syllable from all phones.
+
+    Parameters
+    ----------
+    cleaned_ipa : str
+        Word-level IPA string (no spaces within a word).
+    onsets : set[str] or list[str]
+        Legal onset strings for the language.
+    language : str
+        ISO-3 language code, used for diphthong merging (language-specific).
+
+    Returns
+    -------
+    tuple[list[str], list[str]]
+        (phones, syllables) where phones are tokenized (incl. merged diphthongs),
+        and syllables are strings formed by concatenating phones per syllable.
+
+    Notes
+    -----
+    • Uses maximal-onset; does not yet enforce full sonority sequencing.
+    • For ambiguous cases, legal onsets take priority (max length ≤ 4 by default).
     """
 
     phones = phone_tokenization(cleaned_ipa)
@@ -274,7 +395,6 @@ def syllable_tokenization(cleaned_ipa, onsets, language):
         # Consonants segment between the current vowel and the next vowel.
         inter_vocalic_consonants = sylls_prep[next_vowel_search_start : next_vowel_idx]
         
-        maximal_next_onset = ""
         maximal_next_onset_len = 0
         
         # Find the maximal legal onset that can begin the *next* syllable.
@@ -282,7 +402,6 @@ def syllable_tokenization(cleaned_ipa, onsets, language):
         for k in range(min(len(inter_vocalic_consonants), 4), 0, -1):
             possible_onset = ''.join(inter_vocalic_consonants[-k:])
             if possible_onset in onsets:
-                maximal_next_onset = possible_onset
                 maximal_next_onset_len = k
                 break
         
@@ -310,27 +429,65 @@ def syllable_tokenization(cleaned_ipa, onsets, language):
     return phones, syllables
 
 
-def sonori_syllabify(stressed_ipa):
-    '''
-    See https://github.com/henchc/syllabipy/blob/master/syllabipy/sonoripy.py
-    '''
+def sonori_syllabify(stressed_ipa: str) -> list[str]:
+    """
+    Placeholder for sonority-based syllabification (SSP) fallback.
+
+    Parameters
+    ----------
+    stressed_ipa : str
+        IPA string with stress/length markers.
+
+    Returns
+    -------
+    list of str
+        Currently an empty list; to be implemented using SSP heuristics.
+
+    References
+    ----------
+    • https://github.com/henchc/syllabipy/blob/master/syllabipy/sonoripy.py
+    """
     #TODO: implement fallback for languages which phonotactics are highly predictable using the Sonority Sequencing Principle
     # E.g. Italian, Spanish, Hindi and Arabic
     return []
 
 
-def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
-    '''
-    Takes text in ipa and yields list of onsets and words
+def get_onsets_ipa(language: str, ipa_corpus_path: str | Path, threshold: float = 1e-4) -> list[str]:
+    """
+    Extract a language’s legal onset inventory from an IPA corpus (data-driven).
+
+    Method
+    ------
+    • Load IPA sentences (pickle of List[List[str]] words per sentence).
+    • For each word:
+        - Tokenize to phones.
+        - Identify first vowel; take the preceding phones as the candidate onset.
+        - Keep candidates with no vowels.
+    • Compute onset frequencies; keep those with relative frequency > `threshold`.
+    • Return unique onsets, filtering out any that contain vowels.
 
     This function is adapted from syllabipy's getOnsets function.
     See https://github.com/henchc/syllabipy/blob/master/syllabipy/legalipy.py
 
-    It extracts onsets from a given language's IPA corpus, ensuring that:
-    - It only extracts consonants before the first vowel
-    - Onsets do not contain vowels
-    - Low-frequency onsets are discarded, reducing noise from mis-syllabified or tokenization errors
-    '''
+    Parameters
+    ----------
+    language : str
+        ISO-3 language code (used for logging).
+    ipa_corpus_path : str or Path
+        Path to pickled IPA sentences.
+    threshold : float, default 1e-4
+        Minimum relative frequency to keep an onset (noise filter).
+
+    Returns
+    -------
+    list of str
+        Filtered set of legal onsets inferred from the corpus.
+
+    Notes
+    -----
+    • Heuristic, corpus-dependent inventory; robust to occasional tokenization noise.
+    • Warns and returns [] if no valid onsets are extracted.
+    """
 
     with open(ipa_corpus_path, "rb") as f:
         ipa_sentences = pickle.load(f)
@@ -383,7 +540,31 @@ def get_onsets_ipa(language, ipa_corpus_path, threshold=.0001):
     return filtered_onsets
 
 
-def phone_tokenization(word): 
+def phone_tokenization(word: str) -> list[str]:
+    """
+    Tokenize a word-level IPA string into phones with affricate/length handling.
+
+    Rules
+    -----
+    • Grapheme cluster based segmentation (Unicode \\X).
+    • Merge common affricates (e.g., tʃ, dʒ, t͡s, pf).
+    • Attach length markers (ː, ˑ) to the preceding segment.
+
+    Parameters
+    ----------
+    word : str
+        IPA word (no whitespace); may include diacritics and length markers.
+
+    Returns
+    -------
+    list of str
+        Phone sequence after affricate merging and length attachment.
+
+    Notes
+    -----
+    • Designed as a general tokenizer for downstream diphthong merging
+      and syllabification; does not remove stress/tones here.
+    """
     # Unicode grapheme cluster matcher for phones tokenization
     grapheme_pattern = regex_unicode.compile(r'\X', regex_unicode.UNICODE)
 
