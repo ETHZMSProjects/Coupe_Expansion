@@ -1,4 +1,4 @@
-# An Exploration of Measuring Information Rate Across Human Languages 
+# An Exploration of Measuring Information Rate Across Human Languages  
 
 This repository provides code and data processing pipelines to estimate **information density (ID)**, **speech rate (SR)**, and **information rate (IR)** using **n-gram Markov models**.  
 Our contribution extends Coupé et al. (2019) by systematically varying **n-gram order (1–4), linguistic unit (phones, syllables, words), and corpus scope (within words vs. across sentences n-grams)**.  
@@ -7,7 +7,7 @@ Our contribution extends Coupé et al. (2019) by systematically varying **n-gram
 
 ## 🔬 Scientific Motivation  
 
-Human languages differ greatly in speech tempo, phonotactics, and structure, yet evidence suggests they may transmit information at comparable rates. 
+Human languages differ greatly in speech tempo, phonotactics, and structure, yet evidence suggests they may transmit information at comparable rates.  
 This project tests the robustness of that claim:  
 - Do IR values remain stable across modeling choices (unit, n-gram order, corpus type)?  
 - Or are near-universal IR estimates artifacts of specific methods?  
@@ -16,105 +16,131 @@ This project tests the robustness of that claim:
 
 ---
 
-##  Table of Contents
+## 📑 Table of Contents  
 
-- [ Repository Structure](#-repository-structure)  
-- [ Supported Languages](#-supported-languages)  
-- [ Processing Types](#-processing-types)  
-- [ Desciption of the Pipeline](#-description-of-the-pipeline)
-- [ Computed Metrics](#-computed-metrics)  
-- [ Running the Pipeline](#-running-the-pipeline)  
-- [ Visualizations](#-visualizations)  
-- [ References](#-references)  
-- [ Author](#-author)
+- [Repository Overview](#-repository-overview)  
+- [Methods](#️-methods)  
+  - [Computed Metrics](#-computed-metrics)  
+  - [Linguistic Units Supported](#linguistic-units-supported)  
+  - [Data Sources](#-data-sources)  
+  - [Supported Languages](#-supported-languages)  
+  - [Workflows](#-workflows)  
+    - [Interactive Data Preparation Pipeline](#1-interactive-data-preparation-pipeline)  
+    - [Command-Line Pipeline for Heavy IR Computation](#2-command-line-pipeline-for-heavy-ir-computation)  
+- [Usage](#-usage)  
+  - [Installation and Dependencies](#1--installation-and-dependencies)  
+  - [Set-Up](#set-up) 
+- [Visualizations](#-visualizations)  
+- [Key References](#-key-references)  
+- [How to Cite](#-how-to-cite)  
+- [Authors](#-authors)  
 
 ---
 
-## 📁 Repository Structure
+## 📁 Repository Overview
 
-- `markov_chainpipeline.ipynb` — Main pipeline to build Markov models, compute metrics, and update CSV summaries  
-- `markov_models.py` — Contains the `MarkovModel` class for constructing and analyzing n-gram models  
-- `helpers.py` — Utility functions for data loading, metric calculation, and CSV updates  
-- `plotting.ipynb` — Generates plots to visualize Information Rate trends
-- `syll_comparison_coupe_esidaine.csv` — Csv file that stores IR and ID calculation for each ngram and author (Coupé and esidaine)
+- `IR_comp_pipeline.ipynb` — Pipeline to compute metrics and update CSV summaries.  
+- `ngram_model.py` — Contains the `BaseNgramModel`, `MLEModel`, and `JelinekMercerModel` classes for constructing n-gram models.  
+- `helpers.py` — Utility functions.  
+- `plotting.ipynb` — Generates plots to visualize information rate trends.  
+- `data_prep.ipynb` — Notebook with preprocessing steps to generate the required data.  
+- `info_rate.py` — Computes information rate and counts linguistic units in semantically similar sentences.  
+- `ipa_conversion.py` — Uses espeak-ng or CharsiuG2P to convert words into International Phonetic Alphabet (IPA).  
+- `language_config.json` — Defines language-specific configurations.  
+- `process_ipa.py` — Cleans IPA by removing suprasegmental symbols, punctuation, and non-phonemic artifacts, while preserving a configurable set of language-specific IPA characters.  
+- `syllabification.py` — Splits words into phones and syllables.  
+- `resource_manager.py` — Determines memory limits and safely clamps parallel `n_jobs` to fit within available RAM.  
+- `inter_intra_comparison.csv` — Stores per-speaker and per-language metrics (ID, IR, SR) across linguistic units (phones, syllables, words) and text scopes (within-words, across-sentences).  
 
 ---
 
 ## ⚙️ Methods  
 
-### Linguistic units supported:
-- Phones (phonetic segments)  
-- Syllables  
-- Words
-
-### 📏 Computed Metrics
+#### 📏 Computed Metrics  
 
 We compute **information density (ID)**, **speech rate (SR)**, and **information rate (IR)**:  
 
-- **Entropy estimation (ID)**: Conditional entropy via n-gram models with order n from 1–4.  
-  - **Jelinek–Mercer Smoothing**: Jelinek–Mercer interpolation where we tune λ via perplexity minimization.  
-- **Speech rate (SR)**: Units per second, computed from semantically similar texts using the formula SR = NU/D where NU is the number of units in a specific semantically similar text and D is the duration it took to read that text (phonotation time, excluding pauses). 
-- **Information rate (IR)**: The rate at which inforamtion is transmitted (bit/s) computed by IR = ID * SR
-- To get an IR estimate for a specific language, we average over all speakers from that language 
- 
----
-
-## 📂 Data  
-
-### Sources  
-- **Written data**: [Tatoeba subtitles corpus (OPUS, v2023-04-12)](https://opus.nlpl.eu/) (tokenized).  
-- **Spoken data**: 15 [semantically similar texts](https://github.com/ETHZMSProjects/Coupe_Expansion/tree/master/emillys_code/semantically_similar_texts) from Coupé et al. (2019).
-- Measures of time it took each speaker to read each of the semantically similar texts [("phonotation time")](https://github.com/ETHZMSProjects/Coupe_Expansion/blob/master/AutomaticSylDetect.csv) from Coupé et al. (2019)
+- **Entropy estimation (ID):** Conditional entropy via n-gram models (order 1–4).  
+  - **Jelinek–Mercer Smoothing:** interpolation with λ tuned by minimizing development set perplexity.  
+- **Speech rate (SR):** Units per second, computed as `SR = NU / D`, where NU is the number of units in a semantically similar text and D is its phonation time (excluding pauses).  
+- **Information rate (IR):** Transmission rate in bits per second, computed as `IR = ID × SR`.  
+- Final IR estimates per language are obtained by averaging across speakers.  
 
 ---
 
-## Supported Languages
-
-| Language          | Code | 
-|-------------------|------|
-| French            | FRA  |
-| German            | DEU  | 
-| English           | ENG  |
+#### Linguistic Units Supported
+- Phones (phonetic segments)  
+- Syllables  
+- Words  
 
 ---
 
-This repository supports two workflows:
+#### 📂 Data Sources
 
-1. **Interactive Data Preperation Pipeline**
-2. **Command Line Pipeline for heavy IR Computation**
-   
-### 1) Interactive Data Preperation Pipeline
-Allows to run the preprocessing steps, verifying all data exists and is complete (using corpus_size = 'max')
-Besides, this pipeline can be used for sanity checks and debugging using a tiny dataset (e.g. using corpus_size = 100)
-- Ensures folder structure under <folder_name>/<LANG>/[phones|sylls]/.
-- Calls check_ready_to_run(...) and check_data_availability(...) which verifies the existence and completeness of required pickle and csv files:
-  -  Verifies expected pickles under <folder>/<language>/[phones|sylls]/ with largest possible corpus size 
-  -  Verifies counts CSV at semantically_similar_texts/ling_units_counts.csv with required columns (phones → {"language","n_phones"}, sylls → {"language","n_syllables"})
-- If missing/incomplete, you’ll be prompted to generate via parse_to_phones_and_sylls(...) or count_ling_units(...).
-- Writes a manifest and .ok file which indicates that all necessary data is complete.
-- Produces a small summary table via create_minimal_summary(...) for sanity checks
-  
-**Interactive prompts: This pipeline is not intended for non-interactive or heavy runs (cluster jobs, CI).**
-
-#### Preprocessing  
-1. Converts each word into International Phonetic Alphabet (**IPA**) via [espeak-ng](https://github.com/espeak-ng/espeak-ng) and [CharsiuG2P](https://arxiv.org/abs/2204.03067).
-2. Normalizes each word into Unicode NFC, converts digit to words and merges clitics.
-3. Cleaning: removes suprasegmentals, punctuation and cartifacts.
-4. Syllabification: rule-based **Maximal Onset Principle** with language-specific, data-driven legal onsets.
-5. Counts the number of each linguistic unit type in the semantically similar texts
+- **Written data:** [Tatoeba subtitles corpus (OPUS, v2023-04-12)](https://opus.nlpl.eu/) (tokenized).  
+- **Spoken data:** 15 [semantically similar texts](https://github.com/ETHZMSProjects/Coupe_Expansion/tree/master/emillys_code/semantically_similar_texts) from Coupé et al. (2019).  
+- **Phonation time:** Duration measures of each speaker reading the semantically similar texts ([AutomaticSylDetect.csv](https://github.com/ETHZMSProjects/Coupe_Expansion/blob/master/AutomaticSylDetect.csv)) from Coupé et al. (2019).  
 
 ---
 
-### 2) Command Line Pipeline for heavy IR Computation
-For each (language, unit_type, text_type) task:
-- Checks manifest which indicates the combination of language and unit_type is ready (preprocessing has been completed)
-- Can run preprocessing via parse_to_phones_and_sylls(...) if needed
-- For each n in --n-values, train Jelinek–Mercer smoothed n-gram models.
-  - Computes lambdas tuned on dev perplexity; logs show best λ, mean IR, and perplexity scores.
-  - Metrics per n: ID, IR, SR, dev_perplexity, test_perplexity.
-- If using largest possible corpus (corpus_size = 'max), automatically updates Metrics CSV via update_values_in_csv(...) and saves model files via jm_model.save_model(...).
+#### 🌍 Supported Languages
 
-#### File Structure & Naming
+| Language | Code | 
+|----------|------|
+| French   | FRA  |
+| German   | DEU  | 
+| English  | ENG  |  
+
+---
+
+### 🔄 Workflows  
+
+This repository supports two workflows:  
+
+1. **Interactive Data Preparation Pipeline**  
+2. **Command-Line Pipeline for Heavy IR Computation**  
+
+---
+
+#### 1. Interactive Data Preparation Pipeline  
+
+Runs preprocessing and verifies all required data exists (using `corpus_size = "max"`).  
+Also useful for sanity checks and debugging with small datasets (e.g. `corpus_size = 100`).  
+
+- Ensures folder structure under `<folder_name>/<LANG>/{phones,sylls}/`.  
+- Calls `check_ready_to_run(...)` and `check_data_availability(...)` to verify pickle and CSV files:  
+  - Pickles in `<folder>/<LANG>/{phones,sylls}/` with the largest corpus size.  
+  - Counts CSV at `semantically_similar_texts/ling_units_counts.csv` with required columns:  
+    - Phones → `{"language", "n_phones"}`  
+    - Sylls → `{"language", "n_syllables"}`  
+- If missing/incomplete, prompts generation via `parse_to_phones_and_sylls(...)` or `count_ling_units(...)`.  
+- Writes a manifest and `.ok` file to indicate all required data is present.  
+- Produces a summary table via `create_minimal_summary(...)` for quick checks.  
+
+**Preprocessing steps:**  
+1. Convert words into IPA using [espeak-ng](https://github.com/espeak-ng/espeak-ng) and [CharsiuG2P](https://arxiv.org/abs/2204.03067).  
+2. Normalize text (Unicode NFC), convert digits to words, and merge clitics.  
+3. Clean IPA by removing suprasegmentals, punctuation, and artifacts.  
+4. Apply syllabification (Maximal Onset Principle with language-specific legal onsets).  
+5. Count linguistic unit occurrences in semantically similar texts.  
+
+---
+
+#### 2. Command-Line Pipeline for Heavy IR Computation  
+
+For each `(language, unit_type, text_type)` task, this pipeline:  
+
+- Checks the manifest to confirm preprocessing is complete.  
+- Runs preprocessing via `parse_to_phones_and_sylls(...)` if needed.  
+- Trains **Jelinek–Mercer smoothed n-gram models** for each `n` in `--n-values`:  
+  - Tunes λ on development perplexity.  
+  - Logs best λ, mean IR, and perplexity scores.  
+  - Computes metrics per `n`: **ID, IR, SR, dev_perplexity, test_perplexity**.  
+- If using `corpus_size = "max"`:  
+  - Updates the metrics CSV via `update_values_in_csv(...)`.  
+  - Saves models via `jm_model.save_model(...)`.  
+
+##### File Structure & Naming
 ```
 produced_data_large_corpus/<LANG>/
   phones/phonized_<LANG>_size:*.pkl
@@ -123,31 +149,36 @@ produced_data_large_corpus/<LANG>/
 ```
 ---
 
-## 🖥 Installation & Dependencies  
+## 🚀 Usage
+
+### 1. 🖥 Installation and Dependencies  
 
 - **Python ≥ 3.10**  
-- Dependencies: `numpy`, `pandas`, `scikit-learn`, `joblib`, `matplotlib`  
-- External tools: [espeak-ng](https://github.com/espeak-ng/espeak-ng) (needs to be installed as subprocess, indicating the storage path in the code), [CharsiuG2P](https://arxiv.org/abs/2204.03067), [num2words](https://github.com/savoirfairelinux/num2words).  
+- **Core dependencies** (installed automatically via `requirements.txt`)  
+- **External tools** (must be installed separately):  
+  - [**espeak-ng**](https://github.com/espeak-ng/espeak-ng) – used via subprocess calls for phoneme-level conversion.  
+  - [**CharsiuG2P**](https://arxiv.org/abs/2204.03067) – pretrained grapheme-to-phoneme model (loaded via HuggingFace/Transformers).  
+  - [**num2words**](https://github.com/savoirfairelinux/num2words) – number-to-text conversion (installed automatically).  
 
+#### Set-Up:
 
+```bash
 git clone https://github.com/ETHZMSProjects/Coupe_Expansion.git
 cd Coupe_Expansion/emillys_code
 pip install -r requirements.txt
----
+```
 
-#### 🚀 Usage
+2. Download the written **corpus** (see *Data Sources* above).
+3. Obtain **phonotation time** measures (see *Data Sources* above).
+4. Specify the path to the written corpus under `"Sentence Data"` in `language_config.json`(e.g. `"../../data/CMN/cmn.tok"`).
+5. Adjust `corpus_size` in `language_config.json` if needed.
+6. Run `run_test_pipeline()` in `data_prep.ipynb` to prepare all required data.
+7. For heavy runs, use `IR_comp_pipeline.py`.  
 
-1. Complete installation of tools and dependencies
-2. Download written corpus (see Sources above)
-3. Get phonotation time measures (see Sources above)
-4. Specify the path to the written Corpus under "Sentence Data": "../../data/CMN/cmn.tok" in language_config.json
-5. Adjust corpus_size in language_config.json if needed
-6. Run run_test_pipeline() in data_prep.ipynb to prepare all required data
-7. For heavy runs, use IR_comp_pipeline.py:
+**Running `IR_comp_pipeline.py`:**
 
-IR_comp_pipeline.py accepts language/unit_type/text type settings, n-gram orders, corpus size, number of parallel workers, logging, and RAM budgeting.
-
-In terminal, set your parameters and run:
+Set parameters in your terminal and run.
+e.g.
 ```
 python IR_comp_pipeline.py \
   --languages FRA DEU ENG \
@@ -163,36 +194,70 @@ python IR_comp_pipeline.py \
   --reserve-frac 0.40
 ```
 
-Notes & constraints:
-- Valid --unit-types: phones, sylls, words
-- Valid --text-types: across_sentences, within_words
-- Impossible combo: words + within_words is excluded automatically.
-- corpus-size: "max" or an integer (e.g., 100 for testing).
-- IR computation takes more than 24h for syllables and words with higher n values
-- Parallelism is capped using RAM heuristics (see resource_manager.py)
----
+**Notes and Constraints**
 
-## 📈 Visualizations
-
-Run `plotting.ipynb` to generate plots for:
-
-- Information Rate Comparison across Languages  
-- Information Rate vs. N-gram Order
+- Valid `--unit-types`: `phones`, `sylls`, `words`  
+- Valid `--text-types`: `across_sentences`, `within_words`  
+- Invalid: `words` + `within_words` (excluded automatically)  
+- `--corpus-size`: `"max"` or an integer (e.g. `100` for testing)  
+- IR computation may take >24h for syllables/words with higher `n`  
+- Parallelism is capped using RAM heuristics (see `resource_manager.py`)  
+- Use `corpus_statistics.ipynb` to inspect corpus statistics (STTR, number of n-grams, unit counts, etc.).  
 
 ---
 
-## 📖 References
+## 📈 Visualizations  
 
-Coupé, C., Oh, Y. M., Dediu, D., & Pellegrino, F. (2019). Different languages, similar encoding efficiency: Comparable information rates across the human communicative niche. Science advances, 5(9), eaaw2594. https://doi.org/10.1126/sciadv.aaw2594 <br/>
+Run `plotting.ipynb` to generate:  
 
-Pellegrino, F., Coupé, C., & Marsico, E. (2011). Across-Language Perspective on Speech Information Rate. Language, 87, 539 - 558. <br/>
-
-Oh, Y.M. (2015). Linguistic complexity and information : quantitative approaches. 
+- Comparison tables for IR/ID/SR across languages, units, and n-grams (`get_IR_ID_SR_table(...)`).  
+- Plots of information rate as a function of n-gram order (`plot_inforate_vs_ngram_order(...)`).  
+- Combined plots comparing multiple text levels (`plot_inforate_combined_texttypes(...)`).  
 
 ---
-## 👤 Author
-**Emilly Sidaine-Daumiller**  
-Master’s student in Neural Systems and Computation at University and ETH Zurich 
+
+## 📚 Key References
+
+- C. Coupé, Y. M. Oh, D. Dediu, and F. Pellegrino, *Different languages, similar encoding efficiency: Comparable information rates across the human communicative niche.* Science Advances, 5(9), eaaw2594, 2019.  
+- C. E. Shannon, *Prediction and entropy of printed English.* Bell System Technical Journal, 30(1), 50–64, 1951. [Link](https://onlinelibrary.wiley.com/doi/abs/10.1002/j.1538-7305.1951.tb01366.x)  
+- Y. M. Oh, *Linguistic complexity and information: Quantitative approaches.* PhD thesis, Université de Lyon, 2015. [Link](https://theses.fr/2015LYO20072)  
+- J. Duddington and R. H. Dunn, *espeak-ng: Open-source speech synthesizer.* GitHub, accessed Sept 2025. [Link](https://github.com/espeak-ng/espeak-ng)  
+- J. Zhu, C. Zhang, and D. Jurgens, *ByT5 model for massively multilingual grapheme-to-phoneme conversion.* arXiv:2204.03067, 2022. [Link](https://arxiv.org/abs/2204.03067)  
+- Savoir-faire Linux, *num2words: Convert numbers to words in multiple languages.* GitHub, accessed Sept 2025. [Link](https://github.com/savoirfairelinux/num2words)  
+- S. F. Chen and J. Goodman, *An empirical study of smoothing techniques for language modeling.* Computer Speech & Language, 13(4), 359–394, 1999.  
+---
+
+## 📖 How to Cite
+
+If you use this repository in your research, please cite it using the DOI below:  
+
+[DOI....]
+### Plain-text citation
+Sidaine-Daumiller, E. (2025). An Exploration of Measuring Information Rate Across Human Languages (Version X.X) [Computer software]. Zenodo. https://doi.org/...
+
+### BibTeX
+```bibtex
+@software{sidainedaumiller2025inforate,
+  author       = {Emilly Sidaine-Daumiller, Jacob Ayers, Julia Ulrich, Richard Hahnloser},
+  title        = {An Exploration of Measuring Information Rate Across Human Languages},
+  year         = {2025},
+  publisher    = {Zenodo},
+  version      = {X.X},
+  doi          = {10.5281/zenodo.XXXXXXX},
+  url          = {https://doi.org/10.5281/zenodo.XXXXXXX}
+}
+```
+For reproducibility, please cite the version-specific DOI corresponding to the release you used
+
+---
+
+## 👤 Authors
+- **Emilly Sidaine-Daumiller**
+- Jacob Ayers
+- Julia Ulrich
+- Richard Hahnloser <br>
+
+All authors are affiliated with **ETH Zurich and the University of Zurich**
 
 ---
                 
