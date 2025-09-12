@@ -1,4 +1,5 @@
 # An Exploration of Measuring Information Rate Across Human Languages  
+[![DOI](https://zenodo.org/badge/924771578.svg)](https://doi.org/10.5281/zenodo.17107593)
 
 This repository provides code and data processing pipelines to estimate **information density (ID)**, **speech rate (SR)**, and **information rate (IR)** using **n-gram Markov models**.  
 Our contribution extends Coupé et al. (2019) by systematically varying **n-gram order (1–4), linguistic unit (phones, syllables, words), and corpus scope (within words vs. across sentences n-grams)**.  
@@ -231,9 +232,7 @@ Run `plotting.ipynb` to generate:
 
 If you use this repository in your research, please cite it using the DOI below:  
 
-[DOI....]
-### Plain-text citation
-Sidaine-Daumiller, E. (2025). An Exploration of Measuring Information Rate Across Human Languages (Version X.X) [Computer software]. Zenodo. https://doi.org/...
+[![DOI](https://zenodo.org/badge/924771578.svg)](https://doi.org/10.5281/zenodo.17107593)
 
 ### BibTeX
 ```bibtex
@@ -242,9 +241,9 @@ Sidaine-Daumiller, E. (2025). An Exploration of Measuring Information Rate Acros
   title        = {An Exploration of Measuring Information Rate Across Human Languages},
   year         = {2025},
   publisher    = {Zenodo},
-  version      = {X.X},
-  doi          = {10.5281/zenodo.XXXXXXX},
-  url          = {https://doi.org/10.5281/zenodo.XXXXXXX}
+  version      = {1.0.0},
+  doi          = {10.5281/zenodo.17107594},
+  url          = {https://doi.org/10.5281/zenodo.17107593}
 }
 ```
 For reproducibility, please cite the version-specific DOI corresponding to the release you used
