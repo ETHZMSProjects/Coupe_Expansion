@@ -1,0 +1,36 @@
+# Core
+numpy==2.2.4
+pandas==2.3.1
+matplotlib==3.10.3
+seaborn==0.13.2
+joblib==1.5.1
+psutil==7.0.0
+
+# NLP + text processing
+regex==2024.11.6
+nltk==3.9.1
+jieba==0.42.1
+num2words==0.5.14
+more-itertools==10.7.0
+
+# ML / Transformers
+torch==2.7.1
+transformers==4.53.2
+huggingface-hub==0.33.4
+tokenizers==0.21.2
+safetensors==0.5.3
+tqdm==4.67.1
+
+# Display / utilities
+dataframe_image==0.2.7
+ipython==8.12.3
+
+# Jupyter / notebook workflow
+notebook==7.3.3
+jupyter==1.1.1
+jupyterlab==4.3.6
+ipykernel==6.29.5
+ipywidgets==8.1.5
+nbconvert==7.16.6
+nbformat==5.10.4
+matplotlib-inline==0.1.7

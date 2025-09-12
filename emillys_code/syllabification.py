@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 from functools import partial
 import os
 import re
-from typing import List, Tuple, Callable, Optional, Sequence, Union
+from typing import List, Tuple, Optional
 
 from ipa_conversion import load_charsiu_model, parallelize_ipa_generation, get_largest_ipa_corpus, get_specific_ipa_corpus
 from process_ipa import merge_diphthongs, is_vowel
@@ -136,8 +136,6 @@ def parse_to_phones_and_sylls(
         try:
             if not os.path.exists(input_path):
                 raise FileNotFoundError(f"Missing required language corpus for {language}: {input_path}")
-            
-            #tqdm.write("📥 Loading corpus data ...")
 
             text = [line.strip().split() for line in Path(input_path).read_text(encoding='utf-8').splitlines() if line.strip()]
 
